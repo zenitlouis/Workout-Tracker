@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Workout Tracker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+      color: #fff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding-bottom: env(safe-area-inset-bottom);
+      overflow-x: hidden;
+    }
+
+    .header {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      padding: 20px;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .header.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      color: #ff8c00;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 5px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .quick-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      padding: 20px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+    }
+
+    .stat-card svg {
+      color: #ff8c00;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 5px;
+      font-weight: 600;
+    }
+
+    .section {
+      padding: 0 20px 30px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .section h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #fff;
+    }
+
+    .workout-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 15px;
+      box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    .workout-card:active {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(59, 130, 246, 0.25);
+    }
+
+    .workout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+
+    .workout-header h3 {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .workout-header p {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .workout-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-start {
+      width: 100%;
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-start:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 12px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 12px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(59, 130, 246, 0.1);
+      color: #ff8c00;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-secondary:active {
+      background: rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-icon {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #ff8c00;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:active {
+      background: rgba(59, 130, 246, 0.3);
+      transform: scale(0.95);
+    }
+
+    .btn-icon.danger {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .btn-icon.danger:active {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      color: #ff8c00;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .empty-state p {
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .text-muted {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .history-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      display: flex;
+      gap: 15px;
+      padding: 16px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 16px;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      transition: all 0.2s ease;
+    }
+
+    .history-item:active {
+      background: rgba(59, 130, 246, 0.15);
+    }
+
+    .history-date {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .history-name {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .exercises-list {
+      padding: 20px;
+    }
+
+    .exercise-card {
+      display: flex;
+      gap: 15px;
+      padding: 16px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 16px;
+      margin-bottom: 12px;
+    }
+
+    .exercise-number {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+      color: #fff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .exercise-details {
+      flex: 1;
+    }
+
+    .exercise-details h3 {
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .exercise-meta {
+      display: flex;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      flex-wrap: wrap;
+    }
+
+    .exercise-meta span {
+      background: rgba(59, 130, 246, 0.15);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .fixed-bottom {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      box-shadow: 0 10px 40px rgba(59, 130, 246, 0.5);
+    }
+
+    .timer-card {
+      margin: 20px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%);
+      border: 2px solid rgba(59, 130, 246, 0.4);
+      border-radius: 24px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
+    }
+
+    .timer-display {
+      font-size: 64px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
+    .timer-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .exercises-training {
+      padding: 20px;
+      padding-bottom: 100px;
+    }
+
+    .exercise-training-card {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .exercise-training-header {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .exercise-info {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .sets-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .set-item {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .set-checkbox {
+      flex: 1;
+      background: rgba(59, 130, 246, 0.1);
+      border: 2px solid rgba(59, 130, 246, 0.3);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .set-checkbox.completed {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(37, 99, 235, 0.2) 100%);
+      border-color: #ff6b00;
+      color: #ff8c00;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    .set-checkbox:active {
+      transform: scale(0.98);
+    }
+
+    .weight-input {
+      width: 85px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 2px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 14px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .weight-input:focus {
+      outline: none;
+      border-color: #ff6b00;
+      background: rgba(59, 130, 246, 0.15);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .progress-text {
+      color: #ff8c00;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .history-list {
+      padding: 20px;
+    }
+
+    .session-card {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .session-header h3 {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .session-date {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .session-exercises {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .session-exercise {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px;
+      background: rgba(59, 130, 246, 0.08);
+      border-radius: 10px;
+      font-size: 13px;
+      border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .exercise-name {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .exercise-stats {
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 500;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // Simple icon components as SVG strings
+    const icons = {
+      plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
+      dumbbell: '<svg viewBox="0 0 24 24"><path d="M14.4 14.4L9.6 9.6"></path><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"></path><path d="M21.5 21.5l-1.4-1.4"></path><path d="M3.9 3.9l1.4 1.4"></path><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"></path></svg>',
+      checkCircle: '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+      circle: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle></svg>',
+      play: '<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>',
+      pause: '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>',
+      rotateCcw: '<svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>',
+      chevronRight: '<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>',
+      calendar: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
+      trendingUp: '<svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>',
+      x: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+      edit2: '<svg viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>',
+      save: '<svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>',
+      trash2: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
+      download: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+      upload: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>',
+      settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M1 12h6m6 0h6m-13.2-5.2l4.2 4.2m0-6l-4.2 4.2"></path></svg>'
+    };
+
+    // App State
+    let state = {
+      workouts: [],
+      sessions: [],
+      view: 'home',
+      editingWorkout: null,
+      activeSession: null,
+      timer: 0,
+      timerRunning: false,
+      timerInterval: null
+    };
+
+    // Load data from localStorage
+    function loadData() {
+      const workoutsData = localStorage.getItem('workouts');
+      const sessionsData = localStorage.getItem('sessions');
+      if (workoutsData) state.workouts = JSON.parse(workoutsData);
+      if (sessionsData) state.sessions = JSON.parse(sessionsData);
+    }
+
+    function saveWorkouts(data) {
+      state.workouts = data;
+      localStorage.setItem('workouts', JSON.stringify(data));
+      autoBackup();
+    }
+
+    function saveSessions(data) {
+      state.sessions = data;
+      localStorage.setItem('sessions', JSON.stringify(data));
+      autoBackup();
+    }
+
+    function autoBackup() {
+      try {
+        const data = {
+          workouts: state.workouts,
+          sessions: state.sessions,
+          exportDate: new Date().toISOString(),
+          version: '1.0'
+        };
+        
+        const dataStr = JSON.stringify(data, null, 2);
+        localStorage.setItem('workout-auto-backup', dataStr);
+      } catch (error) {
+        console.log('Auto backup failed:', error);
+      }
+    }
+
+    function downloadBackup() {
+      try {
+        const backupData = localStorage.getItem('workout-auto-backup');
+        if (!backupData) {
+          alert('No backup available yet. Complete a workout first.');
+          return;
+        }
+        
+        const dataBlob = new Blob([backupData], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `workout-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        alert('Backup downloaded!');
+      } catch (error) {
+        alert('Download failed: ' + error.message);
+      }
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function createWorkout(name) {
+      const newWorkout = {
+        id: Date.now(),
+        name,
+        exercises: []
+      };
+      saveWorkouts([...state.workouts, newWorkout]);
+      state.editingWorkout = newWorkout.id;
+      state.view = 'create';
+      render();
+    }
+
+    function addExercise(workoutId, exercise) {
+      const updated = state.workouts.map(w => {
+        if (w.id === workoutId) {
+          return {
+            ...w,
+            exercises: [...w.exercises, { ...exercise, id: Date.now() }]
+          };
+        }
+        return w;
+      });
+      saveWorkouts(updated);
+      render();
+    }
+
+    function deleteExercise(workoutId, exerciseId) {
+      const updated = state.workouts.map(w => {
+        if (w.id === workoutId) {
+          return {
+            ...w,
+            exercises: w.exercises.filter(e => e.id !== exerciseId)
+          };
+        }
+        return w;
+      });
+      saveWorkouts(updated);
+      render();
+    }
+
+    function startSession(workout) {
+      const session = {
+        id: Date.now(),
+        workoutId: workout.id,
+        workoutName: workout.name,
+        date: new Date().toISOString(),
+        exercises: workout.exercises.map(ex => ({
+          ...ex,
+          sets: Array(ex.series).fill().map(() => ({ completed: false, weight: ex.weight || 0 }))
+        }))
+      };
+      state.activeSession = session;
+      state.view = 'train';
+      state.timer = 0;
+      state.timerRunning = false;
+      render();
+    }
+
+    function toggleSet(exerciseIndex, setIndex) {
+      state.activeSession.exercises[exerciseIndex].sets[setIndex].completed = 
+        !state.activeSession.exercises[exerciseIndex].sets[setIndex].completed;
+      render();
+    }
+
+    function updateSetWeight(exerciseIndex, setIndex, weight) {
+      state.activeSession.exercises[exerciseIndex].sets[setIndex].weight = parseFloat(weight) || 0;
+    }
+
+    function updateExerciseWeight(exerciseIndex, weight) {
+      const newWeight = parseFloat(weight) || 0;
+      state.activeSession.exercises[exerciseIndex].weight = newWeight;
+      // Update all sets with the new weight
+      state.activeSession.exercises[exerciseIndex].sets.forEach(set => {
+        set.weight = newWeight;
+      });
+      render();
+    }
+
+    function updateExerciseRest(exerciseIndex, rest) {
+      const newRest = parseFloat(rest) || 1;
+      state.activeSession.exercises[exerciseIndex].rest = newRest;
+      render();
+    }
+
+    function completeSession() {
+      saveSessions([state.activeSession, ...state.sessions]);
+      const sessionName = state.activeSession.workoutName;
+      state.activeSession = null;
+      state.view = 'home';
+      state.timer = 0;
+      state.timerRunning = false;
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+      render();
+      
+      // Show backup reminder
+      setTimeout(() => {
+        if (confirm(`✅ Workout "${sessionName}" saved!\n\n💾 Download backup now?\n(Recommended after every workout)`)) {
+          downloadBackup();
+        }
+      }, 500);
+    }
+
+    function deleteWorkout(id) {
+      saveWorkouts(state.workouts.filter(w => w.id !== id));
+      render();
+    }
+
+    function deleteSession(index) {
+      if (confirm('Delete this workout from history?')) {
+        const updated = state.sessions.filter((_, i) => i !== index);
+        saveSessions(updated);
+        render();
+      }
+    }
+
+    function toggleTimer() {
+      state.timerRunning = !state.timerRunning;
+      if (state.timerRunning) {
+        state.timerInterval = setInterval(() => {
+          state.timer++;
+          document.querySelector('.timer-display').textContent = formatTime(state.timer);
+        }, 1000);
+      } else {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+      render();
+    }
+
+    function resetTimer() {
+      state.timer = 0;
+      state.timerRunning = false;
+      if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+      }
+      render();
+    }
+
+    // Export/Import functions
+    function exportData() {
+      downloadBackup();
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            
+            if (!data.workouts || !data.sessions) {
+              alert('Invalid backup file!');
+              return;
+            }
+            
+            if (confirm('This will replace all current data. Continue?')) {
+              saveWorkouts(data.workouts);
+              saveSessions(data.sessions);
+              state.view = 'home';
+              render();
+              alert('Data restored successfully!');
+            }
+          } catch (error) {
+            alert('Error reading backup file!');
+          }
+        };
+        reader.readAsText(file);
+      };
+      
+      input.click();
+    }
+
+    function importCSV() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv,text/csv';
+      
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const csv = event.target.result;
+            const lines = csv.split('\n').filter(line => line.trim());
+            
+            // Skip header
+            const dataLines = lines.slice(1);
+            
+            const workouts = {};
+            let currentType = null;
+            
+            dataLines.forEach(line => {
+              const cols = line.split(',').map(c => c.trim());
+              
+              // Check if this is a new workout type
+              if (cols[2] && cols[2].length > 0) {
+                currentType = cols[2].replace('.', '').trim();
+                if (!workouts[currentType]) {
+                  workouts[currentType] = {
+                    id: Date.now() + Math.random(),
+                    name: currentType,
+                    exercises: []
+                  };
+                }
+              }
+              
+              // Add exercise if we have a valid row
+              if (currentType && cols[4] && cols[4].length > 0) {
+                const exercise = {
+                  id: Date.now() + Math.random(),
+                  name: cols[4],
+                  series: parseInt(cols[5]) || 3,
+                  reps: parseInt(cols[6]) || 10,
+                  weightType: cols[7] || 'bodyweight',
+                  weight: parseFloat(cols[8]) || 0,
+                  rest: parseFloat(cols[9]) || 1
+                };
+                workouts[currentType].exercises.push(exercise);
+              }
+            });
+            
+            const workoutArray = Object.values(workouts);
+            
+            if (workoutArray.length === 0) {
+              alert('No workouts found in CSV!');
+              return;
+            }
+            
+            if (confirm(`Import ${workoutArray.length} workout(s) from CSV? This will add to existing workouts.`)) {
+              saveWorkouts([...state.workouts, ...workoutArray]);
+              state.view = 'home';
+              render();
+              alert(`Successfully imported ${workoutArray.length} workout(s)!`);
+            }
+          } catch (error) {
+            alert('Error reading CSV file: ' + error.message);
+          }
+        };
+        reader.readAsText(file);
+      };
+      
+      input.click();
+    }
+
+    function duplicateWorkout(workoutId) {
+      const workout = state.workouts.find(w => w.id === workoutId);
+      if (!workout) return;
+      
+      const newName = prompt('New workout name:', workout.name + ' Copy');
+      if (!newName) return;
+      
+      const duplicate = {
+        id: Date.now(),
+        name: newName,
+        exercises: workout.exercises.map(ex => ({
+          ...ex,
+          id: Date.now() + Math.random()
+        }))
+      };
+      
+      saveWorkouts([...state.workouts, duplicate]);
+      render();
+      alert('Workout duplicated!');
+    }
+
+    function editExercise(workoutId, exerciseId) {
+      const workout = state.workouts.find(w => w.id === workoutId);
+      if (!workout) return;
+      
+      const exercise = workout.exercises.find(ex => ex.id === exerciseId);
+      if (!exercise) return;
+      
+      const name = prompt('Exercise name:', exercise.name);
+      if (name === null) return;
+      
+      const series = parseInt(prompt('Number of sets:', exercise.series));
+      if (isNaN(series)) return;
+      
+      const reps = parseInt(prompt('Number of reps:', exercise.reps));
+      if (isNaN(reps)) return;
+      
+      const weightType = prompt('Weight type (bodyweight/dumbbell/kettlebell/plate/barbell):', exercise.weightType);
+      if (weightType === null) return;
+      
+      let weight = exercise.weight;
+      if (weightType !== 'bodyweight') {
+        const weightInput = prompt('Weight - Load (kg):', exercise.weight);
+        if (weightInput === null) return;
+        weight = parseFloat(weightInput) || 0;
+      } else {
+        weight = 0;
+      }
+      
+      const restInput = prompt('Rest period between sets (minutes):', exercise.rest);
+      if (restInput === null) return;
+      const rest = parseFloat(restInput) || 1;
+      
+      const updated = state.workouts.map(w => {
+        if (w.id === workoutId) {
+          return {
+            ...w,
+            exercises: w.exercises.map(ex => {
+              if (ex.id === exerciseId) {
+                return { ...ex, name, series, reps, weightType, weight, rest };
+              }
+              return ex;
+            })
+          };
+        }
+        return w;
+      });
+      
+      saveWorkouts(updated);
+      render();
+    }
+
+    function viewSettings() {
+      state.view = 'settings';
+      render();
+    }
+
+    // Render functions
+    function renderHomeView() {
+      const completedWorkouts = state.sessions.length;
+      const totalPrograms = state.workouts.length;
+
+      return `
+        <div class="home-view">
+          <div class="header">
+            <div class="header-content">
+              ${icons.dumbbell}
+              <h1>Workout Tracker</h1>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <p class="subtitle">Your training journal</p>
+              <button class="btn-icon" onclick="viewSettings()" style="margin-left: auto;">
+                ${icons.settings}
+              </button>
+            </div>
+          </div>
+
+          <div class="quick-stats">
+            <div class="stat-card">
+              ${icons.calendar}
+              <div>
+                <div class="stat-value">${completedWorkouts}</div>
+                <div class="stat-label">Workouts</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              ${icons.trendingUp}
+              <div>
+                <div class="stat-value">${totalPrograms}</div>
+                <div class="stat-label">Programs</div>
+              </div>
+            </div>
+          </div>
+          <div style="text-align: center; padding: 30px 20px; opacity: 0.15;">
+            <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+              <!-- Head -->
+              <circle cx="100" cy="40" r="18" fill="#ff6b00" stroke="#ff8c00" stroke-width="2"/>
+              <!-- Neck -->
+              <rect x="95" y="55" width="10" height="10" fill="#ff6b00"/>
+              <!-- Torso -->
+              <path d="M 70 65 Q 100 75 130 65 L 120 120 Q 100 125 80 120 Z" fill="#ff6b00" stroke="#ff8c00" stroke-width="2"/>
+              <!-- Left Arm Upper -->
+              <ellipse cx="65" cy="80" rx="12" ry="20" fill="#ff6b00" stroke="#ff8c00" stroke-width="2" transform="rotate(-20 65 80)"/>
+              <!-- Right Arm Upper -->
+              <ellipse cx="135" cy="80" rx="12" ry="20" fill="#ff6b00" stroke="#ff8c00" stroke-width="2" transform="rotate(20 135 80)"/>
+              <!-- Left Forearm -->
+              <ellipse cx="55" cy="110" rx="8" ry="18" fill="#ff6b00" stroke="#ff8c00" stroke-width="2" transform="rotate(-10 55 110)"/>
+              <!-- Right Forearm -->
+              <ellipse cx="145" cy="110" rx="8" ry="18" fill="#ff6b00" stroke="#ff8c00" stroke-width="2" transform="rotate(10 145 110)"/>
+              <!-- Left Leg -->
+              <ellipse cx="85" cy="155" rx="15" ry="35" fill="#ff6b00" stroke="#ff8c00" stroke-width="2"/>
+              <!-- Right Leg -->
+              <ellipse cx="115" cy="155" rx="15" ry="35" fill="#ff6b00" stroke="#ff8c00" stroke-width="2"/>
+              <!-- Abs lines -->
+              <line x1="95" y1="80" x2="105" y2="80" stroke="#ff8c00" stroke-width="1.5"/>
+              <line x1="95" y1="95" x2="105" y2="95" stroke="#ff8c00" stroke-width="1.5"/>
+              <line x1="95" y1="110" x2="105" y2="110" stroke="#ff8c00" stroke-width="1.5"/>
+            </svg>
+          </div>
+
+          <div class="section">
+            <h2>My Workouts</h2>
+            ${state.workouts.length === 0 ? `
+              <div class="empty-state">
+                <p>No workouts yet</p>
+                <button class="btn-primary" onclick="createNewWorkout()">
+                  ${icons.plus} Create first workout
+                </button>
+              </div>
+            ` : `
+              ${state.workouts.map(workout => `
+                <div class="workout-card">
+                  <div class="workout-header">
+                    <div>
+                      <h3>${workout.name}</h3>
+                      <p>${workout.exercises.length} exercises</p>
+                    </div>
+                    <div class="workout-actions">
+                      <button class="btn-icon" onclick="editWorkout(${workout.id})">
+                        ${icons.edit2}
+                      </button>
+                      <button class="btn-icon" onclick="duplicateWorkout(${workout.id})" title="Duplicate">
+                        ${icons.save}
+                      </button>
+                      <button class="btn-icon danger" onclick="confirmDeleteWorkout(${workout.id})">
+                        ${icons.trash2}
+                      </button>
+                    </div>
+                  </div>
+                  <button class="btn-start" onclick="startWorkout(${workout.id})">
+                    ${icons.play} Start Workout
+                  </button>
+                </div>
+              `).join('')}
+              <button class="btn-secondary" onclick="createNewWorkout()">
+                ${icons.plus} Add another workout
+              </button>
+            `}
+          </div>
+
+          <div class="section">
+            <div class="section-header">
+              <h2>History</h2>
+              ${state.sessions.length > 0 ? `
+                <button class="btn-text" onclick="viewHistory()">
+                  View all ${icons.chevronRight}
+                </button>
+              ` : ''}
+            </div>
+            ${state.sessions.length === 0 ? `
+              <p class="text-muted">No completed workouts yet</p>
+            ` : `
+              <div class="history-preview">
+                ${state.sessions.slice(0, 3).map(session => {
+                  const date = new Date(session.date);
+                  const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                  return `
+                    <div class="history-item">
+                      <div style="flex: 1;">
+                        <div class="history-date">
+                          ${date.toLocaleDateString('en-US', { 
+                            day: 'numeric', 
+                            month: 'short',
+                            weekday: 'short'
+                          })} · ${time}
+                        </div>
+                        <div class="history-name">${session.workoutName}</div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCreateView() {
+      const workout = state.workouts.find(w => w.id === state.editingWorkout);
+      if (!workout) return '<div>Workout not found</div>';
+
+      return `
+        <div class="create-view">
+          <div class="header">
+            <button class="btn-icon" onclick="goHome()">
+              ${icons.x}
+            </button>
+            <h1>Workout ${workout.name}</h1>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="exercises-list">
+            ${workout.exercises.map((ex, idx) => `
+              <div class="exercise-card">
+                <div class="exercise-number">${idx + 1}</div>
+                <div class="exercise-details">
+                  <h3>${ex.name}</h3>
+                  <div class="exercise-meta">
+                    <span>${ex.series}×${ex.reps} sets</span>
+                    ${ex.weight > 0 ? `<span>💪 ${ex.weight}kg</span>` : ''}
+                    <span>${ex.weightType}</span>
+                    ${ex.rest ? `<span>⏱️ ${ex.rest}min rest</span>` : ''}
+                  </div>
+                </div>
+                <button class="btn-icon" onclick="editExercise(${workout.id}, ${ex.id})" title="Edit">
+                  ${icons.edit2}
+                </button>
+                <button class="btn-icon danger" onclick="confirmDeleteExercise(${workout.id}, ${ex.id})">
+                  ${icons.trash2}
+                </button>
+              </div>
+            `).join('')}
+          </div>
+
+          <button class="btn-primary fixed-bottom" onclick="addNewExercise(${workout.id})">
+            ${icons.plus} Add exercise
+          </button>
+        </div>
+      `;
+    }
+
+    function renderTrainingView() {
+      if (!state.activeSession) return '<div>No active session</div>';
+
+      const completedSets = state.activeSession.exercises.reduce((total, ex) => 
+        total + ex.sets.filter(s => s.completed).length, 0
+      );
+      const totalSets = state.activeSession.exercises.reduce((total, ex) => 
+        total + ex.sets.length, 0
+      );
+
+      return `
+        <div class="training-view">
+          <div class="header sticky">
+            <button class="btn-icon" onclick="confirmEndWorkout()">
+              ${icons.x}
+            </button>
+            <div>
+              <h1>${state.activeSession.workoutName}</h1>
+              <p class="progress-text">${completedSets}/${totalSets} sets</p>
+            </div>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="timer-card">
+            <div class="timer-display">${formatTime(state.timer)}</div>
+            <div class="timer-controls">
+              <button class="btn-icon" onclick="toggleTimer()">
+                ${state.timerRunning ? icons.pause : icons.play}
+              </button>
+              <button class="btn-icon" onclick="resetTimer()">
+                ${icons.rotateCcw}
+              </button>
+            </div>
+          </div>
+
+          <div class="exercises-training">
+            ${state.activeSession.exercises.map((ex, exIdx) => `
+              <div class="exercise-training-card">
+                <div class="exercise-training-header">
+                  <div class="exercise-number">${exIdx + 1}</div>
+                  <div style="flex: 1;">
+                    <h3>${ex.name}</h3>
+                    <p class="exercise-info">
+                      ${ex.series}×${ex.reps} sets · ${ex.weightType}
+                      ${ex.weight > 0 ? ` · 💪 ${ex.weight}kg` : ''}
+                      ${ex.rest ? ` · ⏱️ ${ex.rest}min rest` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                  ${ex.weightType !== 'bodyweight' ? `
+                    <div style="flex: 1;">
+                      <label style="display: block; color: rgba(255, 255, 255, 0.5); font-size: 12px; margin-bottom: 5px; font-weight: 600;">💪 Weight (kg)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value="${ex.weight || 0}"
+                        onchange="updateExerciseWeight(${exIdx}, this.value)"
+                        class="weight-input"
+                        style="width: 100%;"
+                        placeholder="kg"
+                      />
+                    </div>
+                  ` : ''}
+                  <div style="flex: 1;">
+                    <label style="display: block; color: rgba(255, 255, 255, 0.5); font-size: 12px; margin-bottom: 5px; font-weight: 600;">⏱️ Rest (min)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value="${ex.rest || 1}"
+                      onchange="updateExerciseRest(${exIdx}, this.value)"
+                      class="weight-input"
+                      style="width: 100%;"
+                      placeholder="min"
+                    />
+                  </div>
+                </div>
+
+                <div class="sets-grid">
+                  ${ex.sets.map((set, setIdx) => `
+                    <div class="set-item">
+                      <button
+                        class="set-checkbox ${set.completed ? 'completed' : ''}"
+                        onclick="toggleSet(${exIdx}, ${setIdx})"
+                      >
+                        ${set.completed ? icons.checkCircle : icons.circle}
+                        <span>Set ${setIdx + 1}</span>
+                      </button>
+                      ${ex.weightType !== 'bodyweight' ? `
+                        <input
+                          type="number"
+                          step="0.5"
+                          value="${set.weight}"
+                          onchange="updateSetWeight(${exIdx}, ${setIdx}, this.value)"
+                          class="weight-input"
+                          placeholder="kg"
+                        />
+                      ` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <button class="btn-primary fixed-bottom" onclick="completeSession()">
+            ${icons.save} Complete Workout
+          </button>
+        </div>
+      `;
+    }
+
+    function renderHistoryView() {
+      return `
+        <div class="history-view">
+          <div class="header">
+            <button class="btn-icon" onclick="goHome()">
+              ${icons.x}
+            </button>
+            <h1>Workout History</h1>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="history-list">
+            ${state.sessions.map((session, idx) => {
+              const date = new Date(session.date);
+              const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+              return `
+                <div class="session-card">
+                  <div class="session-header">
+                    <div style="flex: 1;">
+                      <h3>${session.workoutName}</h3>
+                      <p class="session-date">
+                        ${date.toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })} at ${time}
+                      </p>
+                    </div>
+                    <button class="btn-icon danger" onclick="deleteSession(${idx})" title="Delete">
+                      ${icons.trash2}
+                    </button>
+                  </div>
+                  <div class="session-exercises">
+                    ${session.exercises.map(ex => `
+                      <div class="session-exercise">
+                        <span class="exercise-name">${ex.name}</span>
+                        <span class="exercise-stats">
+                          ${ex.sets.filter(s => s.completed).length}/${ex.sets.length} sets
+                          ${ex.weightType !== 'bodyweight' && ex.sets[0]?.weight > 0 
+                            ? ` · ${ex.sets[0].weight}kg` 
+                            : ''}
+                        </span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSettingsView() {
+      const hasBackup = localStorage.getItem('workout-auto-backup');
+      const backupDate = hasBackup ? JSON.parse(hasBackup).exportDate : null;
+      
+      return `
+        <div class="settings-view">
+          <div class="header">
+            <button class="btn-icon" onclick="goHome()">
+              ${icons.x}
+            </button>
+            <h1>Settings</h1>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="section">
+            <h2>Auto-Backup</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">
+              ${hasBackup 
+                ? `✅ Backup active - Last saved: ${new Date(backupDate).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}`
+                : '⚠️ No backup yet - complete a workout to create one'
+              }
+            </p>
+            
+            <button class="btn-primary" onclick="downloadBackup()" style="margin-bottom: 15px;">
+              ${icons.download} Download Backup
+            </button>
+            
+            <p class="text-muted" style="font-size: 13px; margin-top: 10px;">
+              💡 Backup saves automatically after every workout. Download it regularly and keep it safe!
+            </p>
+          </div>
+
+          <div class="section">
+            <h2>Import Workouts</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">
+              Import your training plan from CSV file (Date, Exercise, Sets, Reps, Weight...)
+            </p>
+            
+            <button class="btn-primary" onclick="importCSV()" style="margin-bottom: 15px;">
+              ${icons.upload} Import CSV File
+            </button>
+          </div>
+
+          <div class="section">
+            <h2>Restore from Backup</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">
+              Restore your data from a previously saved backup file.
+            </p>
+            
+            <button class="btn-secondary" onclick="importData()">
+              ${icons.upload} Restore Backup
+            </button>
+          </div>
+
+          <div class="section">
+            <h2>About</h2>
+            <div class="stat-card" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+              <p style="color: rgba(255, 255, 255, 0.5); font-size: 14px;">
+                <strong style="color: #fff;">Total Workouts:</strong> ${state.sessions.length}
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.5); font-size: 14px;">
+                <strong style="color: #fff;">Programs Created:</strong> ${state.workouts.length}
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.5); font-size: 14px;">
+                <strong style="color: #fff;">Version:</strong> 1.0
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      let content = '';
+
+      switch(state.view) {
+        case 'home':
+          content = renderHomeView();
+          break;
+        case 'create':
+          content = renderCreateView();
+          break;
+        case 'train':
+          content = renderTrainingView();
+          break;
+        case 'history':
+          content = renderHistoryView();
+          break;
+        case 'settings':
+          content = renderSettingsView();
+          break;
+      }
+
+      app.innerHTML = content;
+    }
+
+    // Event handlers
+    function createNewWorkout() {
+      const name = prompt('Workout name (e.g. A, B, C):');
+      if (name) createWorkout(name);
+    }
+
+    function editWorkout(id) {
+      state.editingWorkout = id;
+      state.view = 'create';
+      render();
+    }
+
+    function confirmDeleteWorkout(id) {
+      if (confirm('Really delete this workout?')) {
+        deleteWorkout(id);
+      }
+    }
+
+    function startWorkout(id) {
+      const workout = state.workouts.find(w => w.id === id);
+      if (workout) startSession(workout);
+    }
+
+    function addNewExercise(workoutId) {
+      const name = prompt('Exercise name:');
+      if (!name) return;
+      const series = parseInt(prompt('Number of sets:') || '3');
+      const reps = parseInt(prompt('Number of reps:') || '10');
+      const weightType = prompt('Weight type (bodyweight/dumbbell/kettlebell/plate/barbell):') || 'bodyweight';
+      const weight = weightType === 'bodyweight' ? 0 : parseFloat(prompt('Weight - Load (kg):') || '0');
+      const rest = parseFloat(prompt('Rest period between sets (minutes):') || '1');
+
+      addExercise(workoutId, {
+        name,
+        series,
+        reps,
+        weightType,
+        weight,
+        rest
+      });
+    }
+
+    function confirmDeleteExercise(workoutId, exerciseId) {
+      if (confirm('Delete this exercise?')) {
+        deleteExercise(workoutId, exerciseId);
+      }
+    }
+
+    function confirmEndWorkout() {
+      if (confirm('Really end workout?')) {
+        state.activeSession = null;
+        state.view = 'home';
+        state.timer = 0;
+        state.timerRunning = false;
+        if (state.timerInterval) {
+          clearInterval(state.timerInterval);
+          state.timerInterval = null;
+        }
+        render();
+      }
+    }
+
+    function goHome() {
+      state.view = 'home';
+      render();
+    }
+
+    function viewHistory() {
+      state.view = 'history';
+      render();
+    }
+
+    // Initialize app
+    loadData();
+    render();
+  </script>
+</body>
+</html>
