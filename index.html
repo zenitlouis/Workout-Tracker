@@ -1789,6 +1789,66 @@
       `;
     }
 
+    function renderManageTemplatesView() {
+      const mealSections = [
+        { key: 'breakfast', name: 'Breakfast', icon: '🌅' },
+        { key: 'morningSnack', name: 'Morning Snack', icon: '☕' },
+        { key: 'lunch', name: 'Lunch', icon: '🍗' },
+        { key: 'afternoonSnack', name: 'Afternoon Snack', icon: '🍎' },
+        { key: 'dinner', name: 'Dinner', icon: '🍝' }
+      ];
+
+      return `
+        <div class="manage-templates-view">
+          <div class="header">
+            <button class="btn-icon" onclick="viewSettings()">
+              ${icons.x}
+            </button>
+            <h1>⚡ Quick Add Templates</h1>
+            <div style="width: 40px"></div>
+          </div>
+
+          ${mealSections.map(section => {
+            const templates = state.customTemplates[section.key] || [];
+            
+            return `
+              <div class="section">
+                <div class="section-header">
+                  <h2>${section.icon} ${section.name}</h2>
+                  <span style="color: #ff6b00; font-weight: 600;">${templates.length} templates</span>
+                </div>
+
+                ${templates.length === 0 ? `
+                  <p class="text-muted">No custom templates yet</p>
+                ` : `
+                  <div class="exercises-list" style="padding: 0;">
+                    ${templates.map((template, idx) => `
+                      <div class="exercise-card">
+                        <div class="exercise-number">${idx + 1}</div>
+                        <div class="exercise-details">
+                          <h3>${template.name}</h3>
+                          <div class="exercise-meta">
+                            <span>${template.calories} kcal</span>
+                          </div>
+                        </div>
+                        <button class="btn-icon danger" onclick="deleteTemplate('${section.key}', ${idx})">
+                          ${icons.trash2}
+                        </button>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
+
+                <button class="btn-secondary" onclick="addTemplate('${section.key}', '${section.name}')" style="width: 100%; margin-top: 15px;">
+                  ${icons.plus} Add ${section.name} Template
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
     function renderSettingsView() {
       const hasBackup = localStorage.getItem('workout-auto-backup');
       const backupDate = hasBackup ? JSON.parse(hasBackup).exportDate : null;
@@ -1928,7 +1988,7 @@
                 <strong>Quick Add:</strong> Use ⚡ Quick Add button for instant meal logging with preset calories.
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
-                <strong>Custom Templates:</strong> Settings → Quick Add Templates → Manage. Add your frequently eaten meals (name + calories) to Quick Add for one-click logging.
+                <strong>Custom Templates:</strong> Settings → Quick Add Templates → Manage Templates. You'll see all 5 meal types (Breakfast, Lunch, Dinner...). Click [+ Add Template] under the meal type you want, enter name and calories. Delete with 🗑️ button. Your templates appear in Quick Add with ★ star.
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Custom Meals:</strong> Add your own meals with name and calorie count.
@@ -2042,6 +2102,9 @@
           break;
         case 'settings':
           content = renderSettingsView();
+          break;
+        case 'manageTemplates':
+          content = renderManageTemplatesView();
           break;
       }
 
@@ -2209,113 +2272,44 @@
     }
 
     function manageTemplates() {
-      const mealTypes = [
-        { key: 'breakfast', name: 'Breakfast' },
-        { key: 'morningSnack', name: 'Morning Snack' },
-        { key: 'lunch', name: 'Lunch' },
-        { key: 'afternoonSnack', name: 'Afternoon Snack' },
-        { key: 'dinner', name: 'Dinner' }
-      ];
-      
-      let message = 'Manage Quick Add Templates:\n\n';
-      mealTypes.forEach((meal, idx) => {
-        const count = state.customTemplates[meal.key]?.length || 0;
-        message += `${idx + 1}. ${meal.name} (${count} custom templates)\n`;
-      });
-      message += '\n0. Cancel\n\nSelect meal type:';
-      
-      const choice = prompt(message);
-      if (!choice || choice === '0') return;
-      
-      const choiceNum = parseInt(choice);
-      if (choiceNum < 1 || choiceNum > mealTypes.length) return;
-      
-      const selectedMeal = mealTypes[choiceNum - 1];
-      manageTemplatesForMeal(selectedMeal.key, selectedMeal.name);
+      state.view = 'manageTemplates';
+      render();
     }
 
-    function manageTemplatesForMeal(mealType, mealName) {
-      const templates = state.customTemplates[mealType] || [];
+    function addTemplate(mealType, mealName) {
+      const name = prompt(`Add ${mealName} Template\n\nMeal name (e.g. "Chicken + rice"):`);
+      if (!name || name.trim() === '') return;
       
-      let message = `${mealName} Templates:\n\n`;
+      const calories = prompt(`Add ${mealName} Template\n\nMeal: ${name}\n\nCalories (kcal):`);
+      if (!calories || calories.trim() === '') return;
       
-      if (templates.length === 0) {
-        message += 'No custom templates yet.\n\n';
-      } else {
-        templates.forEach((template, idx) => {
-          message += `${idx + 1}. ${template.name} (${template.calories} kcal)\n`;
-        });
-        message += '\n';
-      }
-      
-      message += 'A. Add new template\n';
-      if (templates.length > 0) {
-        message += 'D. Delete template\n';
-      }
-      message += '0. Back\n\nChoice:';
-      
-      const choice = prompt(message);
-      if (!choice || choice === '0') {
-        manageTemplates();
+      const caloriesNum = parseInt(calories);
+      if (isNaN(caloriesNum) || caloriesNum <= 0) {
+        alert('❌ Please enter a valid number!');
         return;
       }
       
-      if (choice.toUpperCase() === 'A') {
-        // Add new template - WIZARD
-        const name = prompt(`Add ${mealName} Template\n\nMeal name (e.g. "Chicken + rice"):`);
-        if (!name || name.trim() === '') {
-          alert('❌ Name is required!');
-          manageTemplatesForMeal(mealType, mealName);
-          return;
-        }
-        
-        const calories = prompt(`Add ${mealName} Template\n\nMeal: ${name}\n\nCalories (kcal):`);
-        if (!calories || calories.trim() === '') {
-          alert('❌ Calories are required!');
-          manageTemplatesForMeal(mealType, mealName);
-          return;
-        }
-        
-        const caloriesNum = parseInt(calories);
-        if (isNaN(caloriesNum) || caloriesNum <= 0) {
-          alert('❌ Please enter a valid number!');
-          manageTemplatesForMeal(mealType, mealName);
-          return;
-        }
-        
-        // Ensure array exists
-        if (!state.customTemplates[mealType]) {
-          state.customTemplates[mealType] = [];
-        }
-        
-        // Add template
-        state.customTemplates[mealType].push({
-          name: name.trim(),
-          calories: caloriesNum
-        });
-        
-        // Save to localStorage
-        localStorage.setItem('customTemplates', JSON.stringify(state.customTemplates));
-        
-        alert(`✅ Added "${name}" to ${mealName} Quick Add!\n\n${caloriesNum} kcal`);
-        manageTemplatesForMeal(mealType, mealName);
-      } else if (choice.toUpperCase() === 'D' && templates.length > 0) {
-        // Delete template
-        const deleteIdx = prompt(`Enter template number to delete (1-${templates.length}):`);
-        const idx = parseInt(deleteIdx) - 1;
-        
-        if (idx >= 0 && idx < templates.length) {
-          const deleted = templates[idx];
-          state.customTemplates[mealType].splice(idx, 1);
-          localStorage.setItem('customTemplates', JSON.stringify(state.customTemplates));
-          alert(`🗑️ Deleted "${deleted.name}"`);
-        }
-        
-        manageTemplatesForMeal(mealType, mealName);
-      } else {
-        manageTemplatesForMeal(mealType, mealName);
+      if (!state.customTemplates[mealType]) {
+        state.customTemplates[mealType] = [];
       }
+      
+      state.customTemplates[mealType].push({
+        name: name.trim(),
+        calories: caloriesNum
+      });
+      
+      localStorage.setItem('customTemplates', JSON.stringify(state.customTemplates));
+      render();
     }
+
+    function deleteTemplate(mealType, index) {
+      if (!confirm('Delete this template?')) return;
+      
+      state.customTemplates[mealType].splice(index, 1);
+      localStorage.setItem('customTemplates', JSON.stringify(state.customTemplates));
+      render();
+    }
+
 
     function viewNutritionHistory() {
       state.view = 'nutritionHistory';
