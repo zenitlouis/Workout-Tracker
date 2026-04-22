@@ -606,7 +606,49 @@
       trash2: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>',
       download: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
       upload: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>',
-      settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M1 12h6m6 0h6m-13.2-5.2l4.2 4.2m0-6l-4.2 4.2"></path></svg>'
+      settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M1 12h6m6 0h6m-13.2-5.2l4.2 4.2m0-6l-4.2 4.2"></path></svg>',
+      utensils: '<svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>',
+      coffee: '<svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>',
+      apple: '<svg viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"></path><path d="M10 2c1 .5 2 2 2 5"></path></svg>'
+    };
+
+    // Quick Add Meal Templates
+    const mealTemplates = {
+      breakfast: [
+        { name: 'Oatmeal + banana + honey', calories: 450 },
+        { name: '3 eggs + toast + butter', calories: 400 },
+        { name: 'Müsli + milk + banana', calories: 500 },
+        { name: 'Pancakes (3) + syrup', calories: 550 },
+        { name: 'Yogurt + granola + berries', calories: 350 }
+      ],
+      morningSnack: [
+        { name: 'Protein shake', calories: 250 },
+        { name: 'Banana + peanut butter', calories: 300 },
+        { name: 'Apple + nuts', calories: 200 },
+        { name: 'Greek yogurt', calories: 150 },
+        { name: 'Granola bar', calories: 180 }
+      ],
+      lunch: [
+        { name: 'Chicken + rice + veggies', calories: 800 },
+        { name: 'Pasta + meat sauce', calories: 750 },
+        { name: 'Pizza (2 slices)', calories: 600 },
+        { name: 'Burger + fries', calories: 850 },
+        { name: 'Tuna sandwich + chips', calories: 650 }
+      ],
+      afternoonSnack: [
+        { name: 'Protein shake', calories: 250 },
+        { name: 'Nuts handful', calories: 200 },
+        { name: 'Cheese + crackers', calories: 250 },
+        { name: 'Fruit smoothie', calories: 280 },
+        { name: 'Energy bar', calories: 220 }
+      ],
+      dinner: [
+        { name: 'Steak + potatoes + salad', calories: 900 },
+        { name: 'Chicken + pasta + sauce', calories: 850 },
+        { name: 'Fish + rice + broccoli', calories: 700 },
+        { name: 'Pork chop + mashed potatoes', calories: 800 },
+        { name: 'Spaghetti bolognese', calories: 750 }
+      ]
     };
 
     // App State
@@ -618,7 +660,19 @@
       activeSession: null,
       timer: 0,
       timerRunning: false,
-      timerInterval: null
+      timerInterval: null,
+      // Nutrition
+      nutritionGoal: 2800,
+      nutritionToday: {},
+      nutritionHistory: {},
+      selectedDate: null,
+      customTemplates: {
+        breakfast: [],
+        morningSnack: [],
+        lunch: [],
+        afternoonSnack: [],
+        dinner: []
+      }
     };
 
     // Load data from localStorage
@@ -627,6 +681,28 @@
       const sessionsData = localStorage.getItem('sessions');
       if (workoutsData) state.workouts = JSON.parse(workoutsData);
       if (sessionsData) state.sessions = JSON.parse(sessionsData);
+      
+      // Load nutrition data
+      const nutritionGoal = localStorage.getItem('nutritionGoal');
+      const nutritionHistory = localStorage.getItem('nutritionHistory');
+      if (nutritionGoal) state.nutritionGoal = parseInt(nutritionGoal);
+      if (nutritionHistory) state.nutritionHistory = JSON.parse(nutritionHistory);
+      
+      // Load today's nutrition
+      const today = getTodayDate();
+      state.nutritionToday = state.nutritionHistory[today] || {
+        breakfast: [],
+        morningSnack: [],
+        lunch: [],
+        afternoonSnack: [],
+        dinner: []
+      };
+      
+      // Load custom templates
+      const customTemplates = localStorage.getItem('customTemplates');
+      if (customTemplates) {
+        state.customTemplates = JSON.parse(customTemplates);
+      }
     }
 
     function saveWorkouts(data) {
@@ -641,13 +717,68 @@
       autoBackup();
     }
 
+    // Nutrition save functions
+    function getTodayDate() {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    }
+
+    function saveNutrition() {
+      const today = getTodayDate();
+      state.nutritionHistory[today] = state.nutritionToday;
+      localStorage.setItem('nutritionHistory', JSON.stringify(state.nutritionHistory));
+      autoBackup();
+    }
+
+    function saveNutritionGoal(goal) {
+      state.nutritionGoal = goal;
+      localStorage.setItem('nutritionGoal', goal.toString());
+      autoBackup();
+    }
+
+    function addMeal(mealType, name, calories) {
+      if (!state.nutritionToday[mealType]) {
+        state.nutritionToday[mealType] = [];
+      }
+      
+      state.nutritionToday[mealType].push({
+        name: name,
+        calories: parseInt(calories),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      });
+      
+      saveNutrition();
+      render();
+    }
+
+    function deleteMeal(mealType, index) {
+      state.nutritionToday[mealType].splice(index, 1);
+      saveNutrition();
+      render();
+    }
+
+    function getTotalCalories() {
+      let total = 0;
+      Object.keys(state.nutritionToday).forEach(mealType => {
+        state.nutritionToday[mealType].forEach(meal => {
+          total += meal.calories;
+        });
+      });
+      return total;
+    }
+
     function autoBackup() {
       try {
         const data = {
           workouts: state.workouts,
           sessions: state.sessions,
+          nutrition: {
+            goal: state.nutritionGoal,
+            history: state.nutritionHistory,
+            customTemplates: state.customTemplates
+          },
           exportDate: new Date().toISOString(),
-          version: '1.0'
+          version: '2.0'
         };
         
         const dataStr = JSON.stringify(data, null, 2);
@@ -856,6 +987,32 @@
             if (confirm('This will replace all current data. Continue?')) {
               saveWorkouts(data.workouts);
               saveSessions(data.sessions);
+              
+              // Import nutrition data if available
+              if (data.nutrition) {
+                if (data.nutrition.goal) {
+                  saveNutritionGoal(data.nutrition.goal);
+                }
+                if (data.nutrition.history) {
+                  state.nutritionHistory = data.nutrition.history;
+                  localStorage.setItem('nutritionHistory', JSON.stringify(data.nutrition.history));
+                  
+                  // Load today's data
+                  const today = getTodayDate();
+                  state.nutritionToday = state.nutritionHistory[today] || {
+                    breakfast: [],
+                    morningSnack: [],
+                    lunch: [],
+                    afternoonSnack: [],
+                    dinner: []
+                  };
+                }
+                if (data.nutrition.customTemplates) {
+                  state.customTemplates = data.nutrition.customTemplates;
+                  localStorage.setItem('customTemplates', JSON.stringify(data.nutrition.customTemplates));
+                }
+              }
+              
               state.view = 'home';
               render();
               alert('Data restored successfully!');
@@ -997,13 +1154,15 @@
       if (restInput === null) return;
       const rest = parseFloat(restInput) || 1;
       
+      const superset = confirm('Part of Superset?');
+      
       const updated = state.workouts.map(w => {
         if (w.id === workoutId) {
           return {
             ...w,
             exercises: w.exercises.map(ex => {
               if (ex.id === exerciseId) {
-                return { ...ex, name, series, reps, weightType, weight, rest };
+                return { ...ex, name, series, reps, weightType, weight, rest, superset };
               }
               return ex;
             })
@@ -1035,9 +1194,14 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <p class="subtitle">Your training journal</p>
-              <button class="btn-icon" onclick="viewSettings()" style="margin-left: auto;">
-                ${icons.settings}
-              </button>
+              <div style="display: flex; gap: 10px; margin-left: auto;">
+                <button class="btn-icon" onclick="viewNutrition()">
+                  ${icons.utensils}
+                </button>
+                <button class="btn-icon" onclick="viewSettings()">
+                  ${icons.settings}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1181,7 +1345,7 @@
               <div class="exercise-card">
                 <div class="exercise-number">${idx + 1}</div>
                 <div class="exercise-details">
-                  <h3>${ex.name}</h3>
+                  <h3>${ex.name}${ex.superset ? ' <span style="background: linear-gradient(135deg, #ff6b00, #ff8c00); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔥 SuperS</span>' : ''}</h3>
                   <div class="exercise-meta">
                     <span>${ex.series}×${ex.reps} sets</span>
                     ${ex.weight > 0 ? `<span>💪 ${ex.weight}kg</span>` : ''}
@@ -1247,7 +1411,7 @@
                 <div class="exercise-training-header">
                   <div class="exercise-number">${exIdx + 1}</div>
                   <div style="flex: 1;">
-                    <h3>${ex.name}</h3>
+                    <h3>${ex.name}${ex.superset ? ' <span style="background: linear-gradient(135deg, #ff6b00, #ff8c00); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 8px;">🔥 SuperS</span>' : ''}</h3>
                     <p class="exercise-info">
                       ${ex.series}×${ex.reps} sets · ${ex.weightType}
                       ${ex.weight > 0 ? ` · 💪 ${ex.weight}kg` : ''}
@@ -1373,6 +1537,258 @@
       `;
     }
 
+    function renderNutritionView() {
+      const totalCalories = getTotalCalories();
+      const percentComplete = Math.min(100, (totalCalories / state.nutritionGoal) * 100);
+      
+      const mealSections = [
+        { key: 'breakfast', name: 'Breakfast', icon: '🌅' },
+        { key: 'morningSnack', name: 'Morning Snack', icon: '☕' },
+        { key: 'lunch', name: 'Lunch', icon: '🍗' },
+        { key: 'afternoonSnack', name: 'Afternoon Snack', icon: '🍎' },
+        { key: 'dinner', name: 'Dinner', icon: '🍝' }
+      ];
+
+      return `
+        <div class="nutrition-view">
+          <div class="header">
+            <button class="btn-icon" onclick="goHome()">
+              ${icons.x}
+            </button>
+            <h1>🍽️ Nutrition</h1>
+            <button class="btn-icon" onclick="viewNutritionHistory()">
+              ${icons.calendar}
+            </button>
+          </div>
+
+          <div class="section">
+            <div class="stat-card" style="flex-direction: column; align-items: stretch; gap: 15px;">
+              <div>
+                <div style="text-align: center; margin-bottom: 10px;">
+                  <div style="font-size: 32px; font-weight: 700; color: #ff6b00;">
+                    ${totalCalories} <span style="font-size: 20px; color: rgba(255, 255, 255, 0.5);">/ ${state.nutritionGoal}</span>
+                  </div>
+                  <div style="color: rgba(255, 255, 255, 0.5); font-size: 14px;">kcal today</div>
+                </div>
+                <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; height: 20px; overflow: hidden;">
+                  <div style="background: linear-gradient(90deg, #ff6b00, #ff8c00); height: 100%; width: ${percentComplete}%; transition: width 0.3s; border-radius: 15px;"></div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; font-size: 14px;">
+                  ${totalCalories < state.nutritionGoal 
+                    ? `<span style="color: #ff6b00;">💪 ${state.nutritionGoal - totalCalories} kcal to go!</span>`
+                    : `<span style="color: #4ade80;">✅ Goal reached!</span>`
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+
+          ${mealSections.map(section => {
+            const meals = state.nutritionToday[section.key] || [];
+            const totalMealCal = meals.reduce((sum, meal) => sum + meal.calories, 0);
+            
+            return `
+              <div class="section">
+                <div class="section-header">
+                  <h2>${section.icon} ${section.name}</h2>
+                  ${totalMealCal > 0 ? `<span style="color: #ff6b00; font-weight: 600;">${totalMealCal} kcal</span>` : ''}
+                </div>
+                
+                ${meals.length === 0 ? `
+                  <button class="btn-secondary" onclick="showQuickAdd('${section.key}')" style="width: 100%; margin-bottom: 10px;">
+                    ⚡ Quick Add
+                  </button>
+                  <button class="btn-secondary" onclick="promptAddMeal('${section.key}')" style="width: 100%;">
+                    ${icons.plus} Add ${section.name}
+                  </button>
+                ` : `
+                  <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                    ${meals.map((meal, idx) => `
+                      <div class="stat-card" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                        <div>
+                          <div style="font-weight: 600; color: #fff;">${meal.name}</div>
+                          <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5);">${meal.calories} kcal · ${meal.time}</div>
+                        </div>
+                        <button class="btn-icon danger" onclick="deleteMeal('${section.key}', ${idx})">
+                          ${icons.trash2}
+                        </button>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <button class="btn-secondary" onclick="showQuickAdd('${section.key}')" style="width: 100%; margin-bottom: 10px;">
+                    ⚡ Quick Add
+                  </button>
+                  <button class="btn-secondary" onclick="promptAddMeal('${section.key}')" style="width: 100%;">
+                    ${icons.plus} Add more
+                  </button>
+                `}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function renderNutritionHistoryView() {
+      // Get last 7 days of history
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        days.push({
+          dateStr,
+          date: date,
+          data: state.nutritionHistory[dateStr] || null
+        });
+      }
+
+      return `
+        <div class="nutrition-history-view">
+          <div class="header">
+            <button class="btn-icon" onclick="viewNutrition()">
+              ${icons.x}
+            </button>
+            <h1>📅 History</h1>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="section">
+            <h2>Last 7 Days</h2>
+            
+            ${days.map(day => {
+              const isToday = day.dateStr === getTodayDate();
+              let totalCals = 0;
+              
+              if (day.data) {
+                Object.keys(day.data).forEach(mealType => {
+                  if (Array.isArray(day.data[mealType])) {
+                    day.data[mealType].forEach(meal => {
+                      totalCals += meal.calories || 0;
+                    });
+                  }
+                });
+              }
+              
+              const percent = Math.min(100, (totalCals / state.nutritionGoal) * 100);
+              const dayName = day.date.toLocaleDateString('en-US', { weekday: 'short' });
+              const dateDisplay = day.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              
+              return `
+                <div class="stat-card" style="margin-bottom: 12px; cursor: ${day.data ? 'pointer' : 'default'};" ${day.data ? `onclick="viewDayDetails('${day.dateStr}')"` : ''}>
+                  <div style="flex: 1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                      <div>
+                        <span style="font-weight: 700; color: ${isToday ? '#ff6b00' : '#fff'};">
+                          ${isToday ? 'Today' : dayName}
+                        </span>
+                        <span style="color: rgba(255, 255, 255, 0.5); font-size: 13px; margin-left: 8px;">
+                          ${dateDisplay}
+                        </span>
+                      </div>
+                      <div style="font-weight: 600; color: ${totalCals >= state.nutritionGoal ? '#4ade80' : totalCals > 0 ? '#ff6b00' : 'rgba(255,255,255,0.3)'};">
+                        ${totalCals > 0 ? `${totalCals} kcal` : 'No data'}
+                      </div>
+                    </div>
+                    ${totalCals > 0 ? `
+                      <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 8px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, ${totalCals >= state.nutritionGoal ? '#4ade80' : '#ff6b00'}, ${totalCals >= state.nutritionGoal ? '#22c55e' : '#ff8c00'}); height: 100%; width: ${percent}%; transition: width 0.3s;"></div>
+                      </div>
+                    ` : ''}
+                  </div>
+                  ${day.data ? `<div style="color: rgba(255, 255, 255, 0.3); margin-left: 10px;">${icons.chevronRight}</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDayDetailsView() {
+      const dateStr = state.selectedDate;
+      const date = new Date(dateStr + 'T12:00:00'); // Avoid timezone issues
+      const dayData = state.nutritionHistory[dateStr];
+      
+      if (!dayData) {
+        return `<div class="section"><p>No data for this day</p></div>`;
+      }
+
+      let totalCals = 0;
+      Object.keys(dayData).forEach(mealType => {
+        if (Array.isArray(dayData[mealType])) {
+          dayData[mealType].forEach(meal => {
+            totalCals += meal.calories || 0;
+          });
+        }
+      });
+
+      const isToday = dateStr === getTodayDate();
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const dateDisplay = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+      const mealSections = [
+        { key: 'breakfast', name: 'Breakfast', icon: '🌅' },
+        { key: 'morningSnack', name: 'Morning Snack', icon: '☕' },
+        { key: 'lunch', name: 'Lunch', icon: '🍗' },
+        { key: 'afternoonSnack', name: 'Afternoon Snack', icon: '🍎' },
+        { key: 'dinner', name: 'Dinner', icon: '🍝' }
+      ];
+
+      return `
+        <div class="day-details-view">
+          <div class="header">
+            <button class="btn-icon" onclick="viewNutritionHistory()">
+              ${icons.x}
+            </button>
+            <h1>${isToday ? 'Today' : dayName}</h1>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="section">
+            <p style="text-align: center; color: rgba(255, 255, 255, 0.5); margin-bottom: 15px;">
+              ${dateDisplay}
+            </p>
+            <div class="stat-card" style="flex-direction: column; align-items: stretch; gap: 15px;">
+              <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: 700; color: ${totalCals >= state.nutritionGoal ? '#4ade80' : '#ff6b00'};">
+                  ${totalCals} <span style="font-size: 20px; color: rgba(255, 255, 255, 0.5);">/ ${state.nutritionGoal}</span>
+                </div>
+                <div style="color: rgba(255, 255, 255, 0.5); font-size: 14px;">kcal</div>
+              </div>
+            </div>
+          </div>
+
+          ${mealSections.map(section => {
+            const meals = dayData[section.key] || [];
+            const totalMealCal = meals.reduce((sum, meal) => sum + meal.calories, 0);
+            
+            if (meals.length === 0) return '';
+            
+            return `
+              <div class="section">
+                <div class="section-header">
+                  <h2>${section.icon} ${section.name}</h2>
+                  <span style="color: #ff6b00; font-weight: 600;">${totalMealCal} kcal</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  ${meals.map(meal => `
+                    <div class="stat-card">
+                      <div>
+                        <div style="font-weight: 600; color: #fff;">${meal.name}</div>
+                        <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5);">${meal.calories} kcal${meal.time ? ` · ${meal.time}` : ''}</div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
     function renderSettingsView() {
       const hasBackup = localStorage.getItem('workout-auto-backup');
       const backupDate = hasBackup ? JSON.parse(hasBackup).exportDate : null;
@@ -1385,6 +1801,24 @@
             </button>
             <h1>Settings</h1>
             <div style="width: 40px"></div>
+          </div>
+
+          <div class="section">
+            <h2>🍽️ Nutrition Goal</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">
+              Set your daily calorie target. Recommended for a 15-year-old gaining weight: 2,500-3,000 kcal/day.
+            </p>
+            
+            <div class="stat-card" style="margin-bottom: 15px;">
+              <div style="flex: 1;">
+                <div style="color: rgba(255, 255, 255, 0.7); font-size: 13px; margin-bottom: 5px;">Current Goal</div>
+                <div style="font-size: 28px; font-weight: 700; color: #ff6b00;">${state.nutritionGoal} <span style="font-size: 16px; color: rgba(255, 255, 255, 0.5);">kcal/day</span></div>
+              </div>
+            </div>
+            
+            <button class="btn-secondary" onclick="changeNutritionGoal()" style="width: 100%;">
+              ${icons.edit2} Change Goal
+            </button>
           </div>
 
           <div class="section">
@@ -1433,6 +1867,21 @@
           </div>
 
           <div class="section">
+            <h2>⚡ Quick Add Templates</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">
+              Manage your custom Quick Add templates. Add meals you eat often for one-click logging.
+            </p>
+            
+            <button class="btn-primary" onclick="manageTemplates()" style="margin-bottom: 15px;">
+              ${icons.edit2} Manage Templates
+            </button>
+            
+            <p class="text-muted" style="font-size: 13px; margin-top: 10px;">
+              💡 Add your frequently eaten meals to Quick Add for faster nutrition tracking!
+            </p>
+          </div>
+
+          <div class="section">
             <h2>📖 How to Use</h2>
             
             <div style="background: rgba(255, 107, 0, 0.05); border: 1px solid rgba(255, 107, 0, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
@@ -1462,8 +1911,33 @@
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Adjust Rest:</strong> Modify rest periods on the fly.
               </p>
-              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Timer:</strong> Use timer to track rest between sets.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
+                <strong>Superset:</strong> Exercises with 🔥 SuperS badge should be done back-to-back without rest.
+              </p>
+            </div>
+
+            <div style="background: rgba(255, 107, 0, 0.05); border: 1px solid rgba(255, 107, 0, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+              <h3 style="color: #ff6b00; font-size: 16px; margin-bottom: 10px;">🍽️ Nutrition Tracking</h3>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Access:</strong> Tap 🍽️ icon in top right corner to track your daily calories.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Quick Add:</strong> Use ⚡ Quick Add button for instant meal logging with preset calories.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Custom Templates:</strong> Settings → Quick Add Templates → Manage. Add your frequently eaten meals (name + calories) to Quick Add for one-click logging.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Custom Meals:</strong> Add your own meals with name and calorie count.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>History:</strong> Tap 📅 icon to see last 7 days of nutrition. Click any day to view details.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
+                <strong>Daily Goal:</strong> Set your calorie target in Settings → Nutrition Goal (recommended: 2,500-3,000 kcal for gaining weight).
               </p>
             </div>
 
@@ -1477,6 +1951,9 @@
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Duplicate:</strong> Tap copy icon (💾) to duplicate a workout with increased weights.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Superset:</strong> When adding/editing exercises, confirm "Part of Superset?" to mark exercises as 🔥 SuperS.
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
                 <strong>Delete:</strong> Tap trash icon (🗑️) to remove workouts or history entries.
@@ -1494,8 +1971,11 @@
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Save Backup:</strong> Upload .json file to Google Drive or email it to yourself.
               </p>
-              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Restore:</strong> Use "Restore Backup" to import your .json file on any device.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
+                <strong>Includes:</strong> Backup contains workouts, history, AND nutrition data (meals, goal, history).
               </p>
             </div>
 
@@ -1506,6 +1986,9 @@
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Track Progress:</strong> Check History to see your improvement over time.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Daily Nutrition:</strong> Log meals right after eating for accurate tracking.
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
                 <strong>Weekly Backup:</strong> Download backup every Sunday and save to cloud.
@@ -1523,7 +2006,7 @@
                 <strong style="color: #fff;">Programs Created:</strong> ${state.workouts.length}
               </p>
               <p style="color: rgba(255, 255, 255, 0.5); font-size: 14px;">
-                <strong style="color: #fff;">Version:</strong> 1.0
+                <strong style="color: #fff;">Version:</strong> 2.0
               </p>
             </div>
           </div>
@@ -1547,6 +2030,15 @@
           break;
         case 'history':
           content = renderHistoryView();
+          break;
+        case 'nutrition':
+          content = renderNutritionView();
+          break;
+        case 'nutritionHistory':
+          content = renderNutritionHistoryView();
+          break;
+        case 'dayDetails':
+          content = renderDayDetailsView();
           break;
         case 'settings':
           content = renderSettingsView();
@@ -1587,6 +2079,7 @@
       const weightType = prompt('Weight type (bodyweight/dumbbell/kettlebell/plate/barbell):') || 'bodyweight';
       const weight = weightType === 'bodyweight' ? 0 : parseFloat(prompt('Weight - Load (kg):') || '0');
       const rest = parseFloat(prompt('Rest period between sets (minutes):') || '1');
+      const superset = confirm('Part of Superset?');
 
       addExercise(workoutId, {
         name,
@@ -1594,7 +2087,8 @@
         reps,
         weightType,
         weight,
-        rest
+        rest,
+        superset
       });
     }
 
@@ -1625,6 +2119,212 @@
 
     function viewHistory() {
       state.view = 'history';
+      render();
+    }
+
+    function viewNutrition() {
+      state.view = 'nutrition';
+      render();
+    }
+
+    function showQuickAdd(mealType) {
+      const presetTemplates = mealTemplates[mealType] || [];
+      const customTemplates = state.customTemplates[mealType] || [];
+      const allTemplates = [...presetTemplates, ...customTemplates];
+      
+      if (allTemplates.length === 0) {
+        promptAddMeal(mealType);
+        return;
+      }
+
+      const mealNames = {
+        breakfast: 'Breakfast',
+        morningSnack: 'Morning Snack',
+        lunch: 'Lunch',
+        afternoonSnack: 'Afternoon Snack',
+        dinner: 'Dinner'
+      };
+
+      let message = `Quick Add - ${mealNames[mealType]}:\n\n`;
+      
+      // Preset templates
+      presetTemplates.forEach((template, idx) => {
+        message += `${idx + 1}. ${template.name} (${template.calories} kcal)\n`;
+      });
+      
+      // Custom templates (marked with ★)
+      if (customTemplates.length > 0) {
+        message += `\n--- Your Custom Templates ---\n`;
+        customTemplates.forEach((template, idx) => {
+          const num = presetTemplates.length + idx + 1;
+          message += `${num}. ★ ${template.name} (${template.calories} kcal)\n`;
+        });
+      }
+      
+      message += `\n0. Custom meal\n\nEnter number:`;
+
+      const choice = prompt(message);
+      if (choice === null) return;
+
+      const choiceNum = parseInt(choice);
+      
+      if (choiceNum === 0) {
+        promptAddMeal(mealType);
+      } else if (choiceNum > 0 && choiceNum <= allTemplates.length) {
+        const template = allTemplates[choiceNum - 1];
+        addMeal(mealType, template.name, template.calories);
+      }
+    }
+
+    function promptAddMeal(mealType) {
+      const mealNames = {
+        breakfast: 'Breakfast',
+        morningSnack: 'Morning Snack',
+        lunch: 'Lunch',
+        afternoonSnack: 'Afternoon Snack',
+        dinner: 'Dinner'
+      };
+      
+      const name = prompt(`${mealNames[mealType]} - Meal name:`);
+      if (!name) return;
+      
+      const calories = prompt(`Calories (kcal):`);
+      if (!calories || isNaN(calories)) return;
+      
+      addMeal(mealType, name, parseInt(calories));
+    }
+
+    function changeNutritionGoal() {
+      const newGoal = prompt(`Daily calorie goal (kcal):\n\nRecommended for 15yo gaining weight: 2,500-3,000 kcal`, state.nutritionGoal);
+      if (!newGoal || isNaN(newGoal)) return;
+      
+      const goal = parseInt(newGoal);
+      if (goal < 1000 || goal > 5000) {
+        alert('Please enter a realistic goal between 1,000 and 5,000 kcal');
+        return;
+      }
+      
+      saveNutritionGoal(goal);
+      render();
+    }
+
+    function manageTemplates() {
+      const mealTypes = [
+        { key: 'breakfast', name: 'Breakfast' },
+        { key: 'morningSnack', name: 'Morning Snack' },
+        { key: 'lunch', name: 'Lunch' },
+        { key: 'afternoonSnack', name: 'Afternoon Snack' },
+        { key: 'dinner', name: 'Dinner' }
+      ];
+      
+      let message = 'Manage Quick Add Templates:\n\n';
+      mealTypes.forEach((meal, idx) => {
+        const count = state.customTemplates[meal.key]?.length || 0;
+        message += `${idx + 1}. ${meal.name} (${count} custom templates)\n`;
+      });
+      message += '\n0. Cancel\n\nSelect meal type:';
+      
+      const choice = prompt(message);
+      if (!choice || choice === '0') return;
+      
+      const choiceNum = parseInt(choice);
+      if (choiceNum < 1 || choiceNum > mealTypes.length) return;
+      
+      const selectedMeal = mealTypes[choiceNum - 1];
+      manageTemplatesForMeal(selectedMeal.key, selectedMeal.name);
+    }
+
+    function manageTemplatesForMeal(mealType, mealName) {
+      const templates = state.customTemplates[mealType] || [];
+      
+      let message = `${mealName} Templates:\n\n`;
+      
+      if (templates.length === 0) {
+        message += 'No custom templates yet.\n\n';
+      } else {
+        templates.forEach((template, idx) => {
+          message += `${idx + 1}. ${template.name} (${template.calories} kcal)\n`;
+        });
+        message += '\n';
+      }
+      
+      message += 'A. Add new template\n';
+      if (templates.length > 0) {
+        message += 'D. Delete template\n';
+      }
+      message += '0. Back\n\nChoice:';
+      
+      const choice = prompt(message);
+      if (!choice || choice === '0') {
+        manageTemplates();
+        return;
+      }
+      
+      if (choice.toUpperCase() === 'A') {
+        // Add new template - WIZARD
+        const name = prompt(`Add ${mealName} Template\n\nMeal name (e.g. "Chicken + rice"):`);
+        if (!name || name.trim() === '') {
+          alert('❌ Name is required!');
+          manageTemplatesForMeal(mealType, mealName);
+          return;
+        }
+        
+        const calories = prompt(`Add ${mealName} Template\n\nMeal: ${name}\n\nCalories (kcal):`);
+        if (!calories || calories.trim() === '') {
+          alert('❌ Calories are required!');
+          manageTemplatesForMeal(mealType, mealName);
+          return;
+        }
+        
+        const caloriesNum = parseInt(calories);
+        if (isNaN(caloriesNum) || caloriesNum <= 0) {
+          alert('❌ Please enter a valid number!');
+          manageTemplatesForMeal(mealType, mealName);
+          return;
+        }
+        
+        // Ensure array exists
+        if (!state.customTemplates[mealType]) {
+          state.customTemplates[mealType] = [];
+        }
+        
+        // Add template
+        state.customTemplates[mealType].push({
+          name: name.trim(),
+          calories: caloriesNum
+        });
+        
+        // Save to localStorage
+        localStorage.setItem('customTemplates', JSON.stringify(state.customTemplates));
+        
+        alert(`✅ Added "${name}" to ${mealName} Quick Add!\n\n${caloriesNum} kcal`);
+        manageTemplatesForMeal(mealType, mealName);
+      } else if (choice.toUpperCase() === 'D' && templates.length > 0) {
+        // Delete template
+        const deleteIdx = prompt(`Enter template number to delete (1-${templates.length}):`);
+        const idx = parseInt(deleteIdx) - 1;
+        
+        if (idx >= 0 && idx < templates.length) {
+          const deleted = templates[idx];
+          state.customTemplates[mealType].splice(idx, 1);
+          localStorage.setItem('customTemplates', JSON.stringify(state.customTemplates));
+          alert(`🗑️ Deleted "${deleted.name}"`);
+        }
+        
+        manageTemplatesForMeal(mealType, mealName);
+      } else {
+        manageTemplatesForMeal(mealType, mealName);
+      }
+    }
+
+    function viewNutritionHistory() {
+      state.view = 'nutritionHistory';
+      render();
+    }
+
+    function viewDayDetails(dateStr) {
+      state.selectedDate = dateStr;
+      state.view = 'dayDetails';
       render();
     }
 
