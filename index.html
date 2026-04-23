@@ -609,7 +609,8 @@
       settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M1 12h6m6 0h6m-13.2-5.2l4.2 4.2m0-6l-4.2 4.2"></path></svg>',
       utensils: '<svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>',
       coffee: '<svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>',
-      apple: '<svg viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"></path><path d="M10 2c1 .5 2 2 2 5"></path></svg>'
+      apple: '<svg viewBox="0 0 24 24"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"></path><path d="M10 2c1 .5 2 2 2 5"></path></svg>',
+      ruler: '<svg viewBox="0 0 24 24"><path d="M21.42 7.35L16.65 2.58a2 2 0 0 0-2.83 0L2.58 13.82a2 2 0 0 0 0 2.83l4.77 4.77a2 2 0 0 0 2.83 0l11.24-11.24a2 2 0 0 0 0-2.83z"></path><path d="M6 9l3 3"></path><path d="M9 12l3 3"></path><path d="M12 15l3 3"></path></svg>'
     };
 
     // Quick Add Meal Templates
@@ -661,6 +662,10 @@
       timer: 0,
       timerRunning: false,
       timerInterval: null,
+      restTimerSeconds: 90, // Default rest timer
+      restTimerActive: false,
+      restTimeRemaining: 0,
+      restTimerInterval: null,
       // Nutrition
       nutritionGoal: 2800,
       nutritionToday: {},
@@ -672,7 +677,9 @@
         lunch: [],
         afternoonSnack: [],
         dinner: []
-      }
+      },
+      // Measurements
+      measurements: [] // Array of {date, biceps, chest, waist, thigh, calf}
     };
 
     // Load data from localStorage
@@ -702,6 +709,18 @@
       const customTemplates = localStorage.getItem('customTemplates');
       if (customTemplates) {
         state.customTemplates = JSON.parse(customTemplates);
+      }
+      
+      // Load rest timer setting
+      const restTimerSeconds = localStorage.getItem('restTimerSeconds');
+      if (restTimerSeconds) {
+        state.restTimerSeconds = parseInt(restTimerSeconds);
+      }
+      
+      // Load measurements
+      const measurements = localStorage.getItem('measurements');
+      if (measurements) {
+        state.measurements = JSON.parse(measurements);
       }
     }
 
@@ -777,6 +796,7 @@
             history: state.nutritionHistory,
             customTemplates: state.customTemplates
           },
+          measurements: state.measurements,
           exportDate: new Date().toISOString(),
           version: '2.0'
         };
@@ -873,6 +893,146 @@
       state.view = 'train';
       state.timer = 0;
       state.timerRunning = false;
+      render();
+    }
+
+    function startRestTimer() {
+      state.restTimerActive = true;
+      state.restTimeRemaining = state.restTimerSeconds;
+      
+      if (state.restTimerInterval) {
+        clearInterval(state.restTimerInterval);
+      }
+      
+      state.restTimerInterval = setInterval(() => {
+        state.restTimeRemaining--;
+        
+        if (state.restTimeRemaining <= 0) {
+          clearInterval(state.restTimerInterval);
+          state.restTimerInterval = null;
+          state.restTimerActive = false;
+          
+          // Play beep sound
+          playBeep();
+          
+          render();
+        } else {
+          render();
+        }
+      }, 1000);
+      
+      render();
+    }
+
+    function stopRestTimer() {
+      if (state.restTimerInterval) {
+        clearInterval(state.restTimerInterval);
+        state.restTimerInterval = null;
+      }
+      state.restTimerActive = false;
+      state.restTimeRemaining = 0;
+      render();
+    }
+
+    function playBeep() {
+      // Create audio beep using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800; // Frequency in Hz
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+      
+      // Play 3 beeps
+      setTimeout(() => {
+        const osc2 = audioContext.createOscillator();
+        const gain2 = audioContext.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioContext.destination);
+        osc2.frequency.value = 800;
+        osc2.type = 'sine';
+        gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        osc2.start(audioContext.currentTime);
+        osc2.stop(audioContext.currentTime + 0.5);
+      }, 200);
+      
+      setTimeout(() => {
+        const osc3 = audioContext.createOscillator();
+        const gain3 = audioContext.createGain();
+        osc3.connect(gain3);
+        gain3.connect(audioContext.destination);
+        osc3.frequency.value = 800;
+        osc3.type = 'sine';
+        gain3.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gain3.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        osc3.start(audioContext.currentTime);
+        osc3.stop(audioContext.currentTime + 0.5);
+      }, 400);
+    }
+
+    function changeRestTimer() {
+      const current = state.restTimerSeconds;
+      const newTime = prompt(`Rest timer (seconds):\n\nCurrent: ${current}s\n\nCommon: 60s, 90s, 120s, 180s`, current);
+      if (!newTime) return;
+      
+      const seconds = parseInt(newTime);
+      if (isNaN(seconds) || seconds < 10 || seconds > 600) {
+        alert('Please enter a time between 10-600 seconds');
+        return;
+      }
+      
+      state.restTimerSeconds = seconds;
+      localStorage.setItem('restTimerSeconds', seconds.toString());
+      render();
+    }
+
+    function quickChangeRestTimer() {
+      const options = [30, 60, 90, 120, 180];
+      const current = state.restTimerSeconds;
+      
+      let message = 'Quick Change Rest Timer:\n\n';
+      options.forEach((sec, idx) => {
+        const mins = Math.floor(sec / 60);
+        const secs = sec % 60;
+        const timeStr = secs > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${mins}:00`;
+        const isCurrent = sec === current ? ' ✓' : '';
+        message += `${idx + 1}. ${timeStr} (${sec}s)${isCurrent}\n`;
+      });
+      message += `\n0. Custom time\n\nSelect:`;
+      
+      const choice = prompt(message);
+      if (!choice) return;
+      
+      const choiceNum = parseInt(choice);
+      
+      if (choiceNum === 0) {
+        // Custom time
+        changeRestTimer();
+      } else if (choiceNum > 0 && choiceNum <= options.length) {
+        state.restTimerSeconds = options[choiceNum - 1];
+        localStorage.setItem('restTimerSeconds', state.restTimerSeconds.toString());
+        render();
+      }
+    }
+
+    function adjustRestTimer(delta) {
+      const newValue = state.restTimerSeconds + delta;
+      
+      // Min 30s, Max 300s (5min)
+      if (newValue < 30 || newValue > 300) return;
+      
+      state.restTimerSeconds = newValue;
+      localStorage.setItem('restTimerSeconds', state.restTimerSeconds.toString());
       render();
     }
 
@@ -1011,6 +1171,12 @@
                   state.customTemplates = data.nutrition.customTemplates;
                   localStorage.setItem('customTemplates', JSON.stringify(data.nutrition.customTemplates));
                 }
+              }
+              
+              // Import measurements if available
+              if (data.measurements) {
+                state.measurements = data.measurements;
+                localStorage.setItem('measurements', JSON.stringify(data.measurements));
               }
               
               state.view = 'home';
@@ -1180,6 +1346,222 @@
       render();
     }
 
+    function viewMeasurements() {
+      state.view = 'measurements';
+      render();
+    }
+
+    function addMeasurement() {
+      // Date
+      const today = new Date().toISOString().split('T')[0];
+      const dateStr = prompt(`Measurement Date:\n\nFormat: YYYY-MM-DD`, today);
+      if (!dateStr) return;
+      
+      // Validate date
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        alert('Invalid date format!');
+        return;
+      }
+      
+      // Weight
+      const weight = prompt(`⚖️ Weight (kg):`);
+      if (!weight || isNaN(weight)) return;
+      
+      // Biceps
+      const biceps = prompt(`💪 Biceps (cm):`);
+      if (!biceps || isNaN(biceps)) return;
+      
+      // Chest
+      const chest = prompt(`🫁 Chest (cm):`);
+      if (!chest || isNaN(chest)) return;
+      
+      // Waist
+      const waist = prompt(`📏 Waist (cm):`);
+      if (!waist || isNaN(waist)) return;
+      
+      // Thigh
+      const thigh = prompt(`🦵 Thigh (cm):`);
+      if (!thigh || isNaN(thigh)) return;
+      
+      // Calf
+      const calf = prompt(`🦿 Calf (cm):`);
+      if (!calf || isNaN(calf)) return;
+      
+      // Create measurement
+      const measurement = {
+        id: Date.now(),
+        date: dateStr,
+        weight: parseFloat(weight),
+        biceps: parseFloat(biceps),
+        chest: parseFloat(chest),
+        waist: parseFloat(waist),
+        thigh: parseFloat(thigh),
+        calf: parseFloat(calf)
+      };
+      
+      // Add to measurements (newest first)
+      state.measurements.unshift(measurement);
+      
+      // Save
+      localStorage.setItem('measurements', JSON.stringify(state.measurements));
+      autoBackup();
+      render();
+    }
+
+    function deleteMeasurement(id) {
+      if (!confirm('Delete this measurement?')) return;
+      
+      state.measurements = state.measurements.filter(m => m.id !== id);
+      localStorage.setItem('measurements', JSON.stringify(state.measurements));
+      autoBackup();
+      render();
+    }
+
+    function renderMeasurementsView() {
+      return `
+        <div class="measurements-view">
+          <div class="header">
+            <button class="btn-icon" onclick="goHome()">
+              ${icons.x}
+            </button>
+            <h1>📏 Measurements</h1>
+            <div style="width: 40px"></div>
+          </div>
+
+          <div class="section" style="padding-top: 20px;">
+            <button class="btn-primary" onclick="addMeasurement()" style="width: 100%; margin-bottom: 20px;">
+              ${icons.plus} Add Measurement
+            </button>
+
+            ${state.measurements.length === 0 ? `
+              <div class="empty-state">
+                <p>No measurements yet</p>
+                <p class="text-muted" style="font-size: 13px;">Track your body measurements to see progress over time</p>
+              </div>
+            ` : `
+              <div class="measurements-list">
+                ${state.measurements.map((m, idx) => {
+                  const date = new Date(m.date);
+                  const dateStr = date.toLocaleDateString('en-US', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  });
+                  
+                  // Calculate changes from previous measurement
+                  let changes = {};
+                  if (idx < state.measurements.length - 1) {
+                    const prev = state.measurements[idx + 1];
+                    changes = {
+                      weight: m.weight - prev.weight,
+                      biceps: m.biceps - prev.biceps,
+                      chest: m.chest - prev.chest,
+                      waist: m.waist - prev.waist,
+                      thigh: m.thigh - prev.thigh,
+                      calf: m.calf - prev.calf
+                    };
+                  }
+                  
+                  const formatChange = (change) => {
+                    if (!change || change === 0) return '';
+                    const sign = change > 0 ? '+' : '';
+                    const color = change > 0 ? '#10b981' : '#ef4444';
+                    return `<span style="color: ${color}; font-size: 12px; font-weight: 600; margin-left: 8px;">${sign}${change.toFixed(1)}</span>`;
+                  };
+                  
+                  return `
+                    <div class="measurement-card">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div>
+                          <div style="font-size: 16px; font-weight: 700; color: #ff6b00;">📅 ${dateStr}</div>
+                          <div style="font-size: 20px; font-weight: 700; color: #60a5fa; margin-top: 5px;">
+                            ⚖️ ${m.weight} kg${formatChange(changes.weight)}
+                          </div>
+                        </div>
+                        <button class="btn-icon danger" onclick="deleteMeasurement(${m.id})">
+                          ${icons.trash2}
+                        </button>
+                      </div>
+                      
+                      <div class="measurement-grid">
+                        <div class="measurement-item">
+                          <span>💪 Biceps</span>
+                          <span>${m.biceps} cm${formatChange(changes.biceps)}</span>
+                        </div>
+                        <div class="measurement-item">
+                          <span>🫁 Chest</span>
+                          <span>${m.chest} cm${formatChange(changes.chest)}</span>
+                        </div>
+                        <div class="measurement-item">
+                          <span>📏 Waist</span>
+                          <span>${m.waist} cm${formatChange(changes.waist)}</span>
+                        </div>
+                        <div class="measurement-item">
+                          <span>🦵 Thigh</span>
+                          <span>${m.thigh} cm${formatChange(changes.thigh)}</span>
+                        </div>
+                        <div class="measurement-item">
+                          <span>🦿 Calf</span>
+                          <span>${m.calf} cm${formatChange(changes.calf)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+
+        <style>
+          .measurements-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+          }
+
+          .measurement-card {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 20px;
+            padding: 20px;
+          }
+
+          .measurement-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+
+          .measurement-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(59, 130, 246, 0.08);
+            border-radius: 10px;
+            font-size: 14px;
+          }
+
+          .measurement-item span:first-child {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+          }
+
+          .measurement-item span:last-child {
+            color: #e2e8f0;
+            font-weight: 700;
+          }
+        </style>
+      `;
+    }
+
+    function viewSettings() {
+      state.view = 'settings';
+      render();
+    }
+
     // Render functions
     function renderHomeView() {
       const completedWorkouts = state.sessions.length;
@@ -1195,6 +1577,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <p class="subtitle">Your training journal</p>
               <div style="display: flex; gap: 10px; margin-left: auto;">
+                <button class="btn-icon" onclick="viewMeasurements()">
+                  ${icons.ruler}
+                </button>
                 <button class="btn-icon" onclick="viewNutrition()">
                   ${icons.utensils}
                 </button>
@@ -1393,15 +1778,58 @@
             <div style="width: 40px"></div>
           </div>
 
-          <div class="timer-card">
-            <div class="timer-display">${formatTime(state.timer)}</div>
-            <div class="timer-controls">
-              <button class="btn-icon" onclick="toggleTimer()">
-                ${state.timerRunning ? icons.pause : icons.play}
-              </button>
-              <button class="btn-icon" onclick="resetTimer()">
-                ${icons.rotateCcw}
-              </button>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; padding-bottom: 10px;">
+            <!-- Rest Timer (Left) -->
+            <div class="timer-card" style="margin: 0; ${state.restTimerActive ? 'border: 2px solid #ff6b00; background: linear-gradient(135deg, rgba(255, 107, 0, 0.2) 0%, rgba(255, 140, 0, 0.15) 100%);' : ''}">
+              <div style="color: ${state.restTimerActive ? '#ff6b00' : 'rgba(255, 255, 255, 0.5)'}; font-size: 12px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">⏱️ Rest</div>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                <div class="timer-display" style="font-size: 48px; margin: 0; color: ${state.restTimerActive ? '#ff6b00' : 'rgba(255, 255, 255, 0.3)'};">
+                  ${state.restTimerActive ? formatTime(state.restTimeRemaining) : formatTime(state.restTimerSeconds)}
+                </div>
+                ${!state.restTimerActive ? `
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <button 
+                      class="btn-icon" 
+                      onclick="adjustRestTimer(30)" 
+                      style="width: 32px; height: 32px; padding: 4px; font-size: 16px; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3);"
+                    >
+                      ▲
+                    </button>
+                    <button 
+                      class="btn-icon" 
+                      onclick="adjustRestTimer(-30)" 
+                      style="width: 32px; height: 32px; padding: 4px; font-size: 16px; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3);"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+              <div class="timer-controls" style="gap: 8px;">
+                ${state.restTimerActive ? `
+                  <button class="btn-icon" onclick="stopRestTimer()" style="background: rgba(255, 107, 0, 0.2); border-color: #ff6b00; color: #ff6b00;">
+                    ${icons.x}
+                  </button>
+                ` : `
+                  <button class="btn-icon" onclick="startRestTimer()">
+                    ${icons.play}
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <!-- Training Timer (Right) -->
+            <div class="timer-card" style="margin: 0;">
+              <div style="color: rgba(255, 255, 255, 0.5); font-size: 12px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">⏱️ Training</div>
+              <div class="timer-display" style="font-size: 48px; margin-bottom: 15px;">${formatTime(state.timer)}</div>
+              <div class="timer-controls" style="gap: 8px;">
+                <button class="btn-icon" onclick="toggleTimer()">
+                  ${state.timerRunning ? icons.pause : icons.play}
+                </button>
+                <button class="btn-icon" onclick="resetTimer()">
+                  ${icons.rotateCcw}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1804,7 +2232,7 @@
             <button class="btn-icon" onclick="viewSettings()">
               ${icons.x}
             </button>
-            <h1>⚡ Quick Add Templates</h1>
+            <h1>⚡ Quick Food Add Templates</h1>
             <div style="width: 40px"></div>
           </div>
 
@@ -1876,9 +2304,24 @@
               </div>
             </div>
             
-            <button class="btn-secondary" onclick="changeNutritionGoal()" style="width: 100%;">
+            <button class="btn-primary" onclick="changeNutritionGoal()" style="width: 100%;">
               ${icons.edit2} Change Goal
             </button>
+          </div>
+
+          <div class="section">
+            <h2>⚡ Quick Food Add Templates</h2>
+            <p class="text-muted" style="margin-bottom: 20px;">
+              Manage your custom Quick Add templates. Add meals you eat often for one-click logging.
+            </p>
+            
+            <button class="btn-primary" onclick="manageTemplates()" style="margin-bottom: 15px;">
+              ${icons.edit2} Manage Food Templates
+            </button>
+            
+            <p class="text-muted" style="font-size: 13px; margin-top: 10px;">
+              💡 Add your frequently eaten meals to Quick Add for faster nutrition tracking!
+            </p>
           </div>
 
           <div class="section">
@@ -1921,24 +2364,9 @@
               Restore your data from a previously saved backup file.
             </p>
             
-            <button class="btn-secondary" onclick="importData()">
+            <button class="btn-primary" onclick="importData()">
               ${icons.upload} Restore Backup
             </button>
-          </div>
-
-          <div class="section">
-            <h2>⚡ Quick Add Templates</h2>
-            <p class="text-muted" style="margin-bottom: 20px;">
-              Manage your custom Quick Add templates. Add meals you eat often for one-click logging.
-            </p>
-            
-            <button class="btn-primary" onclick="manageTemplates()" style="margin-bottom: 15px;">
-              ${icons.edit2} Manage Templates
-            </button>
-            
-            <p class="text-muted" style="font-size: 13px; margin-top: 10px;">
-              💡 Add your frequently eaten meals to Quick Add for faster nutrition tracking!
-            </p>
           </div>
 
           <div class="section">
@@ -1988,7 +2416,7 @@
                 <strong>Quick Add:</strong> Use ⚡ Quick Add button for instant meal logging with preset calories.
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
-                <strong>Custom Templates:</strong> Settings → Quick Add Templates → Manage Templates. You'll see all 5 meal types (Breakfast, Lunch, Dinner...). Click [+ Add Template] under the meal type you want, enter name and calories. Delete with 🗑️ button. Your templates appear in Quick Add with ★ star.
+                <strong>Custom Templates:</strong> Settings → Quick Food Add Templates → Manage Food Templates. You'll see all 5 meal types (Breakfast, Lunch, Dinner...). Click [+ Add Template] under the meal type you want, enter name and calories. Delete with 🗑️ button. Your templates appear in Quick Add with ★ star.
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
                 <strong>Custom Meals:</strong> Add your own meals with name and calorie count.
@@ -1998,6 +2426,22 @@
               </p>
               <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
                 <strong>Daily Goal:</strong> Set your calorie target in Settings → Nutrition Goal (recommended: 2,500-3,000 kcal for gaining weight).
+              </p>
+            </div>
+
+            <div style="background: rgba(255, 107, 0, 0.05); border: 1px solid rgba(255, 107, 0, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 15px;">
+              <h3 style="color: #ff6b00; font-size: 16px; margin-bottom: 10px;">📏 Body Measurements</h3>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Access:</strong> Tap 📏 icon in top right corner to track body measurements.
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Add Measurement:</strong> Record date, weight (kg), and 5 body measurements (biceps, chest, waist, thigh, calf in cm).
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
+                <strong>Progress Tracking:</strong> See changes from previous measurement with color-coded differences (green = gain, red = loss).
+              </p>
+              <p style="color: rgba(255, 255, 255, 0.7); font-size: 13px; line-height: 1.6;">
+                <strong>Custom Dates:</strong> Can add past measurements by entering custom date (YYYY-MM-DD format).
               </p>
             </div>
 
@@ -2105,6 +2549,9 @@
           break;
         case 'manageTemplates':
           content = renderManageTemplatesView();
+          break;
+        case 'measurements':
+          content = renderMeasurementsView();
           break;
       }
 
