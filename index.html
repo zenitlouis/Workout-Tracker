@@ -1101,7 +1101,7 @@
       if (state.timerRunning) {
         state.timerInterval = setInterval(() => {
           state.timer++;
-          document.querySelector('.timer-display').textContent = formatTime(state.timer);
+          render();
         }, 1000);
       } else {
         clearInterval(state.timerInterval);
