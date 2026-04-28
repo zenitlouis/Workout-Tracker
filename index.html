@@ -886,7 +886,8 @@
         date: new Date().toISOString(),
         exercises: workout.exercises.map(ex => ({
           ...ex,
-          sets: Array(ex.series).fill().map(() => ({ completed: false, weight: ex.weight || 0 }))
+          sets: Array(ex.series).fill().map(() => ({ completed: false, weight: ex.weight || 0 })),
+          note: '' // Add note field
         }))
       };
       state.activeSession = session;
@@ -1034,6 +1035,18 @@
       state.restTimerSeconds = newValue;
       localStorage.setItem('restTimerSeconds', state.restTimerSeconds.toString());
       render();
+    }
+
+    function addExerciseNote(exerciseIndex) {
+      const exercise = state.activeSession.exercises[exerciseIndex];
+      const currentNote = exercise.note || '';
+      
+      const note = prompt(`Note for ${exercise.name}:\n\n(e.g., "Easy, add 2kg next time" or "Hard, decrease weight")`, currentNote);
+      
+      if (note !== null) {
+        state.activeSession.exercises[exerciseIndex].note = note;
+        render();
+      }
     }
 
     function toggleSet(exerciseIndex, setIndex) {
@@ -1901,6 +1914,24 @@
                     </div>
                   `).join('')}
                 </div>
+
+                ${ex.note ? `
+                  <div style="margin-top: 15px; padding: 12px; background: rgba(255, 107, 0, 0.1); border: 1px solid rgba(255, 107, 0, 0.3); border-radius: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                      <div style="flex: 1;">
+                        <div style="color: #ff6b00; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 5px;">💬 Note</div>
+                        <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; line-height: 1.5;">${ex.note}</div>
+                      </div>
+                      <button class="btn-icon" onclick="addExerciseNote(${exIdx})" style="flex-shrink: 0; width: 32px; height: 32px;">
+                        ${icons.edit2}
+                      </button>
+                    </div>
+                  </div>
+                ` : `
+                  <button class="btn-secondary" onclick="addExerciseNote(${exIdx})" style="width: 100%; margin-top: 15px;">
+                    💬 Add Note
+                  </button>
+                `}
               </div>
             `).join('')}
           </div>
@@ -1948,13 +1979,21 @@
                   <div class="session-exercises">
                     ${session.exercises.map(ex => `
                       <div class="session-exercise">
-                        <span class="exercise-name">${ex.name}</span>
-                        <span class="exercise-stats">
-                          ${ex.sets.filter(s => s.completed).length}/${ex.sets.length} sets
-                          ${ex.weightType !== 'bodyweight' && ex.sets[0]?.weight > 0 
-                            ? ` · ${ex.sets[0].weight}kg` 
-                            : ''}
-                        </span>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <span class="exercise-name">${ex.name}</span>
+                          <span class="exercise-stats">
+                            ${ex.sets.filter(s => s.completed).length}/${ex.sets.length} sets
+                            ${ex.weightType !== 'bodyweight' && ex.sets[0]?.weight > 0 
+                              ? ` · ${ex.sets[0].weight}kg` 
+                              : ''}
+                          </span>
+                        </div>
+                        ${ex.note ? `
+                          <div style="margin-top: 8px; padding: 8px; background: rgba(255, 107, 0, 0.08); border-left: 2px solid #ff6b00; border-radius: 4px;">
+                            <div style="color: #ff6b00; font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 3px;">💬 Note</div>
+                            <div style="color: rgba(255, 255, 255, 0.8); font-size: 12px; line-height: 1.4;">${ex.note}</div>
+                          </div>
+                        ` : ''}
                       </div>
                     `).join('')}
                   </div>
