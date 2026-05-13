@@ -616,39 +616,39 @@
     // Quick Add Meal Templates
     const mealTemplates = {
       breakfast: [
-        { name: 'Oatmeal + banana + honey', calories: 450 },
-        { name: '3 eggs + toast + butter', calories: 400 },
-        { name: 'Müsli + milk + banana', calories: 500 },
-        { name: 'Pancakes (3) + syrup', calories: 550 },
-        { name: 'Yogurt + granola + berries', calories: 350 }
+        { name: 'Oatmeal + banana + honey', calories: 450, protein: 12, carbs: 75, fats: 10 },
+        { name: '3 eggs + toast + butter', calories: 400, protein: 24, carbs: 30, fats: 18 },
+        { name: 'Müsli + milk + banana', calories: 500, protein: 15, carbs: 80, fats: 12 },
+        { name: 'Pancakes (3) + syrup', calories: 550, protein: 12, carbs: 90, fats: 14 },
+        { name: 'Yogurt + granola + berries', calories: 350, protein: 18, carbs: 55, fats: 8 }
       ],
       morningSnack: [
-        { name: 'Protein shake', calories: 250 },
-        { name: 'Banana + peanut butter', calories: 300 },
-        { name: 'Apple + nuts', calories: 200 },
-        { name: 'Greek yogurt', calories: 150 },
-        { name: 'Granola bar', calories: 180 }
+        { name: 'Protein shake', calories: 250, protein: 30, carbs: 10, fats: 8 },
+        { name: 'Banana + peanut butter', calories: 300, protein: 8, carbs: 35, fats: 16 },
+        { name: 'Apple + nuts', calories: 200, protein: 4, carbs: 25, fats: 12 },
+        { name: 'Greek yogurt', calories: 150, protein: 15, carbs: 10, fats: 5 },
+        { name: 'Granola bar', calories: 180, protein: 5, carbs: 28, fats: 6 }
       ],
       lunch: [
-        { name: 'Chicken + rice + veggies', calories: 800 },
-        { name: 'Pasta + meat sauce', calories: 750 },
-        { name: 'Pizza (2 slices)', calories: 600 },
-        { name: 'Burger + fries', calories: 850 },
-        { name: 'Tuna sandwich + chips', calories: 650 }
+        { name: 'Chicken + rice + veggies', calories: 800, protein: 50, carbs: 90, fats: 18 },
+        { name: 'Pasta + meat sauce', calories: 750, protein: 35, carbs: 95, fats: 20 },
+        { name: 'Pizza (2 slices)', calories: 600, protein: 25, carbs: 70, fats: 22 },
+        { name: 'Burger + fries', calories: 850, protein: 30, carbs: 85, fats: 40 },
+        { name: 'Tuna sandwich + chips', calories: 650, protein: 32, carbs: 75, fats: 18 }
       ],
       afternoonSnack: [
-        { name: 'Protein shake', calories: 250 },
-        { name: 'Nuts handful', calories: 200 },
-        { name: 'Cheese + crackers', calories: 250 },
-        { name: 'Fruit smoothie', calories: 280 },
-        { name: 'Energy bar', calories: 220 }
+        { name: 'Protein shake', calories: 250, protein: 30, carbs: 10, fats: 8 },
+        { name: 'Nuts handful', calories: 200, protein: 6, carbs: 8, fats: 18 },
+        { name: 'Cheese + crackers', calories: 250, protein: 12, carbs: 25, fats: 12 },
+        { name: 'Fruit smoothie', calories: 280, protein: 8, carbs: 55, fats: 4 },
+        { name: 'Energy bar', calories: 220, protein: 10, carbs: 35, fats: 6 }
       ],
       dinner: [
-        { name: 'Steak + potatoes + salad', calories: 900 },
-        { name: 'Chicken + pasta + sauce', calories: 850 },
-        { name: 'Fish + rice + broccoli', calories: 700 },
-        { name: 'Pork chop + mashed potatoes', calories: 800 },
-        { name: 'Spaghetti bolognese', calories: 750 }
+        { name: 'Steak + potatoes + salad', calories: 900, protein: 55, carbs: 70, fats: 35 },
+        { name: 'Chicken + pasta + sauce', calories: 850, protein: 48, carbs: 95, fats: 22 },
+        { name: 'Fish + rice + broccoli', calories: 700, protein: 45, carbs: 80, fats: 15 },
+        { name: 'Pork chop + mashed potatoes', calories: 800, protein: 42, carbs: 75, fats: 30 },
+        { name: 'Spaghetti bolognese', calories: 750, protein: 38, carbs: 90, fats: 20 }
       ]
     };
 
@@ -749,13 +749,27 @@
       autoBackup();
     }
 
+    function saveDailyTotals(calories, protein, carbs, fats) {
+      const today = getTodayDate();
+      state.nutritionHistory[today] = {
+        dailyTotal: true,
+        calories: parseInt(calories) || 0,
+        protein: parseInt(protein) || 0,
+        carbs: parseInt(carbs) || 0,
+        fats: parseInt(fats) || 0
+      };
+      state.nutritionToday = state.nutritionHistory[today];
+      localStorage.setItem('nutritionHistory', JSON.stringify(state.nutritionHistory));
+      autoBackup();
+    }
+
     function saveNutritionGoal(goal) {
       state.nutritionGoal = goal;
       localStorage.setItem('nutritionGoal', goal.toString());
       autoBackup();
     }
 
-    function addMeal(mealType, name, calories) {
+    function addMeal(mealType, name, calories, protein = 0, carbs = 0, fats = 0) {
       if (!state.nutritionToday[mealType]) {
         state.nutritionToday[mealType] = [];
       }
@@ -763,6 +777,9 @@
       state.nutritionToday[mealType].push({
         name: name,
         calories: parseInt(calories),
+        protein: parseInt(protein),
+        carbs: parseInt(carbs),
+        fats: parseInt(fats),
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
       });
       
@@ -784,6 +801,18 @@
         });
       });
       return total;
+    }
+
+    function getTotalMacros() {
+      let totals = { protein: 0, carbs: 0, fats: 0 };
+      Object.keys(state.nutritionToday).forEach(mealType => {
+        state.nutritionToday[mealType].forEach(meal => {
+          totals.protein += meal.protein || 0;
+          totals.carbs += meal.carbs || 0;
+          totals.fats += meal.fats || 0;
+        });
+      });
+      return totals;
     }
 
     function autoBackup() {
@@ -2006,7 +2035,13 @@
     }
 
     function renderNutritionView() {
-      const totalCalories = getTotalCalories();
+      const isDailyTotal = state.nutritionToday.dailyTotal === true;
+      const totalCalories = isDailyTotal ? (state.nutritionToday.calories || 0) : getTotalCalories();
+      const totalMacros = isDailyTotal ? {
+        protein: state.nutritionToday.protein || 0,
+        carbs: state.nutritionToday.carbs || 0,
+        fats: state.nutritionToday.fats || 0
+      } : getTotalMacros();
       const percentComplete = Math.min(100, (totalCalories / state.nutritionGoal) * 100);
       
       const mealSections = [
@@ -2027,6 +2062,25 @@
             <button class="btn-icon" onclick="viewNutritionHistory()">
               ${icons.calendar}
             </button>
+          </div>
+
+          <div class="section">
+            <div style="display: flex; gap: 10px; background: rgba(255, 107, 0, 0.1); padding: 6px; border-radius: 16px;">
+              <button 
+                class="btn-secondary" 
+                onclick="switchToQuickEntry()"
+                style="flex: 1; margin: 0; ${isDailyTotal ? 'background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); color: #fff; border-color: transparent;' : ''}"
+              >
+                ⚡ Quick Entry
+              </button>
+              <button 
+                class="btn-secondary" 
+                onclick="switchToMealLog()"
+                style="flex: 1; margin: 0; ${!isDailyTotal ? 'background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); color: #fff; border-color: transparent;' : ''}"
+              >
+                📝 Meal Log
+              </button>
+            </div>
           </div>
 
           <div class="section">
@@ -2051,7 +2105,78 @@
             </div>
           </div>
 
-          ${mealSections.map(section => {
+          <div class="section">
+            <div class="stat-card" style="padding: 15px;">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%;">
+                <div style="text-align: center;">
+                  <div style="font-size: 24px; font-weight: 700; color: #60a5fa;">${totalMacros.protein}g</div>
+                  <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.5px;">Protein</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 24px; font-weight: 700; color: #fbbf24;">${totalMacros.carbs}g</div>
+                  <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.5px;">Carbs</div>
+                </div>
+                <div style="text-align: center;">
+                  <div style="font-size: 24px; font-weight: 700; color: #f87171;">${totalMacros.fats}g</div>
+                  <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; letter-spacing: 0.5px;">Fats</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          ${isDailyTotal ? `
+            <div class="section">
+              <h2>Enter Today's Totals</h2>
+              <div style="background: rgba(255, 107, 0, 0.1); border: 1px solid rgba(255, 107, 0, 0.2); border-radius: 16px; padding: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                  <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px;">Calories (kcal)</label>
+                    <input 
+                      type="number" 
+                      id="quickCalories" 
+                      value="${state.nutritionToday.calories || ''}"
+                      placeholder="0"
+                      style="width: 100%; background: rgba(255, 107, 0, 0.15); border: 2px solid rgba(255, 107, 0, 0.3); border-radius: 12px; padding: 14px; color: #fff; font-size: 18px; font-weight: 700; text-align: center;"
+                    />
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px;">Protein (g)</label>
+                    <input 
+                      type="number" 
+                      id="quickProtein" 
+                      value="${state.nutritionToday.protein || ''}"
+                      placeholder="0"
+                      style="width: 100%; background: rgba(96, 165, 250, 0.15); border: 2px solid rgba(96, 165, 250, 0.3); border-radius: 12px; padding: 14px; color: #60a5fa; font-size: 18px; font-weight: 700; text-align: center;"
+                    />
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px;">Carbs (g)</label>
+                    <input 
+                      type="number" 
+                      id="quickCarbs" 
+                      value="${state.nutritionToday.carbs || ''}"
+                      placeholder="0"
+                      style="width: 100%; background: rgba(251, 191, 36, 0.15); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 14px; color: #fbbf24; font-size: 18px; font-weight: 700; text-align: center;"
+                    />
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px;">Fats (g)</label>
+                    <input 
+                      type="number" 
+                      id="quickFats" 
+                      value="${state.nutritionToday.fats || ''}"
+                      placeholder="0"
+                      style="width: 100%; background: rgba(248, 113, 113, 0.15); border: 2px solid rgba(248, 113, 113, 0.3); border-radius: 12px; padding: 14px; color: #f87171; font-size: 18px; font-weight: 700; text-align: center;"
+                    />
+                  </div>
+                  <button class="btn-primary" onclick="saveQuickEntry()" style="margin-top: 10px;">
+                    ${icons.save} Save Totals
+                  </button>
+                </div>
+              </div>
+            </div>
+          ` : `
+            ${mealSections.map(section => {
             const meals = state.nutritionToday[section.key] || [];
             const totalMealCal = meals.reduce((sum, meal) => sum + meal.calories, 0);
             
@@ -2072,14 +2197,23 @@
                 ` : `
                   <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
                     ${meals.map((meal, idx) => `
-                      <div class="stat-card" style="flex-direction: row; justify-content: space-between; align-items: center;">
-                        <div>
-                          <div style="font-weight: 600; color: #fff;">${meal.name}</div>
-                          <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5);">${meal.calories} kcal · ${meal.time}</div>
+                      <div class="stat-card" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <div>
+                            <div style="font-weight: 600; color: #fff;">${meal.name}</div>
+                            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5);">${meal.calories} kcal · ${meal.time}</div>
+                          </div>
+                          <button class="btn-icon danger" onclick="deleteMeal('${section.key}', ${idx})">
+                            ${icons.trash2}
+                          </button>
                         </div>
-                        <button class="btn-icon danger" onclick="deleteMeal('${section.key}', ${idx})">
-                          ${icons.trash2}
-                        </button>
+                        ${(meal.protein || meal.carbs || meal.fats) ? `
+                          <div style="display: flex; gap: 10px; font-size: 12px;">
+                            ${meal.protein ? `<span style="background: rgba(96, 165, 250, 0.2); padding: 4px 8px; border-radius: 6px; color: #60a5fa;">P: ${meal.protein}g</span>` : ''}
+                            ${meal.carbs ? `<span style="background: rgba(251, 191, 36, 0.2); padding: 4px 8px; border-radius: 6px; color: #fbbf24;">C: ${meal.carbs}g</span>` : ''}
+                            ${meal.fats ? `<span style="background: rgba(248, 113, 113, 0.2); padding: 4px 8px; border-radius: 6px; color: #f87171;">F: ${meal.fats}g</span>` : ''}
+                          </div>
+                        ` : ''}
                       </div>
                     `).join('')}
                   </div>
@@ -2093,6 +2227,7 @@
               </div>
             `;
           }).join('')}
+          `}
         </div>
       `;
     }
@@ -2129,13 +2264,17 @@
               let totalCals = 0;
               
               if (day.data) {
-                Object.keys(day.data).forEach(mealType => {
-                  if (Array.isArray(day.data[mealType])) {
-                    day.data[mealType].forEach(meal => {
-                      totalCals += meal.calories || 0;
-                    });
-                  }
-                });
+                if (day.data.dailyTotal === true) {
+                  totalCals = day.data.calories || 0;
+                } else {
+                  Object.keys(day.data).forEach(mealType => {
+                    if (Array.isArray(day.data[mealType])) {
+                      day.data[mealType].forEach(meal => {
+                        totalCals += meal.calories || 0;
+                      });
+                    }
+                  });
+                }
               }
               
               const percent = Math.min(100, (totalCals / state.nutritionGoal) * 100);
@@ -2182,14 +2321,20 @@
         return `<div class="section"><p>No data for this day</p></div>`;
       }
 
+      const isDailyTotal = dayData.dailyTotal === true;
       let totalCals = 0;
-      Object.keys(dayData).forEach(mealType => {
-        if (Array.isArray(dayData[mealType])) {
-          dayData[mealType].forEach(meal => {
-            totalCals += meal.calories || 0;
-          });
-        }
-      });
+      
+      if (isDailyTotal) {
+        totalCals = dayData.calories || 0;
+      } else {
+        Object.keys(dayData).forEach(mealType => {
+          if (Array.isArray(dayData[mealType])) {
+            dayData[mealType].forEach(meal => {
+              totalCals += meal.calories || 0;
+            });
+          }
+        });
+      }
 
       const isToday = dateStr === getTodayDate();
       const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
@@ -2227,7 +2372,28 @@
             </div>
           </div>
 
-          ${mealSections.map(section => {
+          ${isDailyTotal ? `
+            <div class="section">
+              <h2>Daily Totals</h2>
+              <div class="stat-card" style="padding: 15px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%;">
+                  <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #60a5fa;">${dayData.protein || 0}g</div>
+                    <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); text-transform: uppercase;">Protein</div>
+                  </div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #fbbf24;">${dayData.carbs || 0}g</div>
+                    <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); text-transform: uppercase;">Carbs</div>
+                  </div>
+                  <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #f87171;">${dayData.fats || 0}g</div>
+                    <div style="font-size: 11px; color: rgba(255, 255, 255, 0.5); text-transform: uppercase;">Fats</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ` : `
+            ${mealSections.map(section => {
             const meals = dayData[section.key] || [];
             const totalMealCal = meals.reduce((sum, meal) => sum + meal.calories, 0);
             
@@ -2242,17 +2408,25 @@
                 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                   ${meals.map(meal => `
-                    <div class="stat-card">
+                    <div class="stat-card" style="flex-direction: column; gap: 8px;">
                       <div>
                         <div style="font-weight: 600; color: #fff;">${meal.name}</div>
                         <div style="font-size: 13px; color: rgba(255, 255, 255, 0.5);">${meal.calories} kcal${meal.time ? ` · ${meal.time}` : ''}</div>
                       </div>
+                      ${(meal.protein || meal.carbs || meal.fats) ? `
+                        <div style="display: flex; gap: 10px; font-size: 12px;">
+                          ${meal.protein ? `<span style="background: rgba(96, 165, 250, 0.2); padding: 4px 8px; border-radius: 6px; color: #60a5fa;">P: ${meal.protein}g</span>` : ''}
+                          ${meal.carbs ? `<span style="background: rgba(251, 191, 36, 0.2); padding: 4px 8px; border-radius: 6px; color: #fbbf24;">C: ${meal.carbs}g</span>` : ''}
+                          ${meal.fats ? `<span style="background: rgba(248, 113, 113, 0.2); padding: 4px 8px; border-radius: 6px; color: #f87171;">F: ${meal.fats}g</span>` : ''}
+                        </div>
+                      ` : ''}
                     </div>
                   `).join('')}
                 </div>
               </div>
             `;
           }).join('')}
+          `}
         </div>
       `;
     }
@@ -2722,7 +2896,7 @@
         promptAddMeal(mealType);
       } else if (choiceNum > 0 && choiceNum <= allTemplates.length) {
         const template = allTemplates[choiceNum - 1];
-        addMeal(mealType, template.name, template.calories);
+        addMeal(mealType, template.name, template.calories, template.protein || 0, template.carbs || 0, template.fats || 0);
       }
     }
 
@@ -2741,7 +2915,11 @@
       const calories = prompt(`Calories (kcal):`);
       if (!calories || isNaN(calories)) return;
       
-      addMeal(mealType, name, parseInt(calories));
+      const protein = prompt(`Protein (g):`) || '0';
+      const carbs = prompt(`Carbs (g):`) || '0';
+      const fats = prompt(`Fats (g):`) || '0';
+      
+      addMeal(mealType, name, parseInt(calories), parseInt(protein), parseInt(carbs), parseInt(fats));
     }
 
     function changeNutritionGoal() {
@@ -2776,13 +2954,20 @@
         return;
       }
       
+      const protein = prompt(`Protein (g) - optional:`) || '0';
+      const carbs = prompt(`Carbs (g) - optional:`) || '0';
+      const fats = prompt(`Fats (g) - optional:`) || '0';
+      
       if (!state.customTemplates[mealType]) {
         state.customTemplates[mealType] = [];
       }
       
       state.customTemplates[mealType].push({
         name: name.trim(),
-        calories: caloriesNum
+        calories: caloriesNum,
+        protein: parseInt(protein),
+        carbs: parseInt(carbs),
+        fats: parseInt(fats)
       });
       
       localStorage.setItem('customTemplates', JSON.stringify(state.customTemplates));
@@ -2806,6 +2991,79 @@
     function viewDayDetails(dateStr) {
       state.selectedDate = dateStr;
       state.view = 'dayDetails';
+      render();
+    }
+
+    function switchToQuickEntry() {
+      const today = getTodayDate();
+      const currentData = state.nutritionToday;
+      
+      // If already has meals, ask for confirmation
+      let hasMeals = false;
+      Object.keys(currentData).forEach(key => {
+        if (Array.isArray(currentData[key]) && currentData[key].length > 0) {
+          hasMeals = true;
+        }
+      });
+      
+      if (hasMeals && !confirm('Switch to Quick Entry? This will clear your meal log for today.')) {
+        return;
+      }
+      
+      // Calculate current totals if switching from meals
+      let calories = 0, protein = 0, carbs = 0, fats = 0;
+      if (hasMeals) {
+        Object.keys(currentData).forEach(mealType => {
+          if (Array.isArray(currentData[mealType])) {
+            currentData[mealType].forEach(meal => {
+              calories += meal.calories || 0;
+              protein += meal.protein || 0;
+              carbs += meal.carbs || 0;
+              fats += meal.fats || 0;
+            });
+          }
+        });
+      }
+      
+      state.nutritionToday = {
+        dailyTotal: true,
+        calories: calories,
+        protein: protein,
+        carbs: carbs,
+        fats: fats
+      };
+      state.nutritionHistory[today] = state.nutritionToday;
+      localStorage.setItem('nutritionHistory', JSON.stringify(state.nutritionHistory));
+      render();
+    }
+
+    function switchToMealLog() {
+      if (state.nutritionToday.dailyTotal === true) {
+        if (!confirm('Switch to Meal Log? You can track individual meals instead of just totals.')) {
+          return;
+        }
+      }
+      
+      const today = getTodayDate();
+      state.nutritionToday = {
+        breakfast: [],
+        morningSnack: [],
+        lunch: [],
+        afternoonSnack: [],
+        dinner: []
+      };
+      state.nutritionHistory[today] = state.nutritionToday;
+      localStorage.setItem('nutritionHistory', JSON.stringify(state.nutritionHistory));
+      render();
+    }
+
+    function saveQuickEntry() {
+      const calories = document.getElementById('quickCalories').value;
+      const protein = document.getElementById('quickProtein').value;
+      const carbs = document.getElementById('quickCarbs').value;
+      const fats = document.getElementById('quickFats').value;
+      
+      saveDailyTotals(calories, protein, carbs, fats);
       render();
     }
 
