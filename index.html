@@ -682,6 +682,9 @@
       measurements: [] // Array of {date, biceps, chest, waist, thigh, calf}
     };
 
+    const ACTIVE_SESSION_KEY = 'workout-active-session';
+    const BROWSER_SNAPSHOT_KEY = 'workout-browser-snapshot';
+
     // Load data from localStorage
     function loadData() {
       const workoutsData = localStorage.getItem('workouts');
@@ -722,18 +725,35 @@
       if (measurements) {
         state.measurements = JSON.parse(measurements);
       }
+
+      // Restore an unfinished workout after a refresh or accidental close.
+      const activeSessionData = localStorage.getItem(ACTIVE_SESSION_KEY);
+      if (activeSessionData) {
+        try {
+          const saved = JSON.parse(activeSessionData);
+          if (saved.activeSession && Array.isArray(saved.activeSession.exercises)) {
+            state.activeSession = saved.activeSession;
+            state.timer = Number.isFinite(saved.timer) ? saved.timer : 0;
+            state.timerRunning = false;
+            state.view = 'train';
+          }
+        } catch (error) {
+          console.warn('Could not restore unfinished workout:', error);
+          localStorage.removeItem(ACTIVE_SESSION_KEY);
+        }
+      }
     }
 
     function saveWorkouts(data) {
       state.workouts = data;
       localStorage.setItem('workouts', JSON.stringify(data));
-      autoBackup();
+      saveBrowserSnapshot();
     }
 
     function saveSessions(data) {
       state.sessions = data;
       localStorage.setItem('sessions', JSON.stringify(data));
-      autoBackup();
+      saveBrowserSnapshot();
     }
 
     // Nutrition save functions
@@ -746,7 +766,7 @@
       const today = getTodayDate();
       state.nutritionHistory[today] = state.nutritionToday;
       localStorage.setItem('nutritionHistory', JSON.stringify(state.nutritionHistory));
-      autoBackup();
+      saveBrowserSnapshot();
     }
 
     function saveDailyTotals(calories, protein, carbs, fats) {
@@ -760,13 +780,13 @@
       };
       state.nutritionToday = state.nutritionHistory[today];
       localStorage.setItem('nutritionHistory', JSON.stringify(state.nutritionHistory));
-      autoBackup();
+      saveBrowserSnapshot();
     }
 
     function saveNutritionGoal(goal) {
       state.nutritionGoal = goal;
       localStorage.setItem('nutritionGoal', goal.toString());
-      autoBackup();
+      saveBrowserSnapshot();
     }
 
     function addMeal(mealType, name, calories, protein = 0, carbs = 0, fats = 0) {
@@ -815,35 +835,47 @@
       return totals;
     }
 
-    function autoBackup() {
+    function buildBackupData() {
+      return {
+        workouts: state.workouts,
+        sessions: state.sessions,
+        nutrition: {
+          goal: state.nutritionGoal,
+          history: state.nutritionHistory,
+          customTemplates: state.customTemplates
+        },
+        measurements: state.measurements,
+        exportDate: new Date().toISOString(),
+        version: '2.1'
+      };
+    }
+
+    // This snapshot is browser storage, not a portable backup file.
+    function saveBrowserSnapshot() {
       try {
-        const data = {
-          workouts: state.workouts,
-          sessions: state.sessions,
-          nutrition: {
-            goal: state.nutritionGoal,
-            history: state.nutritionHistory,
-            customTemplates: state.customTemplates
-          },
-          measurements: state.measurements,
-          exportDate: new Date().toISOString(),
-          version: '2.0'
-        };
-        
-        const dataStr = JSON.stringify(data, null, 2);
-        localStorage.setItem('workout-auto-backup', dataStr);
+        localStorage.setItem(BROWSER_SNAPSHOT_KEY, JSON.stringify(buildBackupData()));
       } catch (error) {
-        console.log('Auto backup failed:', error);
+        console.log('Browser storage snapshot failed:', error);
       }
+    }
+
+    function saveActiveSession() {
+      if (!state.activeSession) return;
+
+      localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({
+        activeSession: state.activeSession,
+        timer: state.timer,
+        savedAt: new Date().toISOString()
+      }));
+    }
+
+    function clearActiveSession() {
+      localStorage.removeItem(ACTIVE_SESSION_KEY);
     }
 
     function downloadBackup() {
       try {
-        const backupData = localStorage.getItem('workout-auto-backup');
-        if (!backupData) {
-          alert('No backup available yet. Complete a workout first.');
-          return;
-        }
+        const backupData = JSON.stringify(buildBackupData(), null, 2);
         
         const dataBlob = new Blob([backupData], { type: 'application/json' });
         const url = URL.createObjectURL(dataBlob);
@@ -923,6 +955,7 @@
       state.view = 'train';
       state.timer = 0;
       state.timerRunning = false;
+      saveActiveSession();
       render();
     }
 
@@ -1074,6 +1107,7 @@
       
       if (note !== null) {
         state.activeSession.exercises[exerciseIndex].note = note;
+        saveActiveSession();
         render();
       }
     }
@@ -1081,11 +1115,13 @@
     function toggleSet(exerciseIndex, setIndex) {
       state.activeSession.exercises[exerciseIndex].sets[setIndex].completed = 
         !state.activeSession.exercises[exerciseIndex].sets[setIndex].completed;
+      saveActiveSession();
       render();
     }
 
     function updateSetWeight(exerciseIndex, setIndex, weight) {
       state.activeSession.exercises[exerciseIndex].sets[setIndex].weight = parseFloat(weight) || 0;
+      saveActiveSession();
     }
 
     function updateExerciseWeight(exerciseIndex, weight) {
@@ -1095,12 +1131,14 @@
       state.activeSession.exercises[exerciseIndex].sets.forEach(set => {
         set.weight = newWeight;
       });
+      saveActiveSession();
       render();
     }
 
     function updateExerciseRest(exerciseIndex, rest) {
       const newRest = parseFloat(rest) || 1;
       state.activeSession.exercises[exerciseIndex].rest = newRest;
+      saveActiveSession();
       render();
     }
 
@@ -1108,6 +1146,7 @@
       saveSessions([state.activeSession, ...state.sessions]);
       const sessionName = state.activeSession.workoutName;
       state.activeSession = null;
+      clearActiveSession();
       state.view = 'home';
       state.timer = 0;
       state.timerRunning = false;
@@ -1115,6 +1154,11 @@
         clearInterval(state.timerInterval);
         state.timerInterval = null;
       }
+      if (state.restTimerInterval) {
+        clearInterval(state.restTimerInterval);
+        state.restTimerInterval = null;
+      }
+      state.restTimerActive = false;
       render();
       
       // Show backup reminder
@@ -1143,6 +1187,7 @@
       if (state.timerRunning) {
         state.timerInterval = setInterval(() => {
           state.timer++;
+          saveActiveSession();
           render();
         }, 1000);
       } else {
@@ -1159,6 +1204,7 @@
         clearInterval(state.timerInterval);
         state.timerInterval = null;
       }
+      saveActiveSession();
       render();
     }
 
@@ -1189,6 +1235,7 @@
             if (confirm('This will replace all current data. Continue?')) {
               saveWorkouts(data.workouts);
               saveSessions(data.sessions);
+              clearActiveSession();
               
               // Import nutrition data if available
               if (data.nutrition) {
@@ -1447,7 +1494,7 @@
       
       // Save
       localStorage.setItem('measurements', JSON.stringify(state.measurements));
-      autoBackup();
+      saveBrowserSnapshot();
       render();
     }
 
@@ -1456,7 +1503,7 @@
       
       state.measurements = state.measurements.filter(m => m.id !== id);
       localStorage.setItem('measurements', JSON.stringify(state.measurements));
-      autoBackup();
+      saveBrowserSnapshot();
       render();
     }
 
@@ -2492,8 +2539,15 @@
     }
 
     function renderSettingsView() {
-      const hasBackup = localStorage.getItem('workout-auto-backup');
-      const backupDate = hasBackup ? JSON.parse(hasBackup).exportDate : null;
+      const browserSnapshot = localStorage.getItem(BROWSER_SNAPSHOT_KEY);
+      let browserSnapshotDate = null;
+      if (browserSnapshot) {
+        try {
+          browserSnapshotDate = JSON.parse(browserSnapshot).exportDate;
+        } catch (error) {
+          console.warn('Could not read browser storage information:', error);
+        }
+      }
       
       return `
         <div class="settings-view">
@@ -2539,16 +2593,16 @@
           </div>
 
           <div class="section">
-            <h2>Auto-Backup</h2>
+            <h2>Data & Backup</h2>
             <p class="text-muted" style="margin-bottom: 20px;">
-              ${hasBackup 
-                ? `✅ Backup active - Last saved: ${new Date(backupDate).toLocaleString('en-US', {
+              ${browserSnapshotDate
+                ? `✅ Data saved in this browser - Last update: ${new Date(browserSnapshotDate).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
                   })}`
-                : '⚠️ No backup yet - complete a workout to create one'
+                : 'Your current data is stored automatically in this browser.'
               }
             </p>
             
@@ -2557,7 +2611,7 @@
             </button>
             
             <p class="text-muted" style="font-size: 13px; margin-top: 10px;">
-              💡 Backup saves automatically after every workout. Download it regularly and keep it safe!
+              💡 Browser storage is not a portable backup. Download the JSON file regularly so you can restore your data on another device, domain, or after clearing browser data.
             </p>
           </div>
 
@@ -2825,6 +2879,7 @@
     function confirmEndWorkout() {
       if (confirm('Really end workout?')) {
         state.activeSession = null;
+        clearActiveSession();
         state.view = 'home';
         state.timer = 0;
         state.timerRunning = false;
@@ -2832,6 +2887,11 @@
           clearInterval(state.timerInterval);
           state.timerInterval = null;
         }
+        if (state.restTimerInterval) {
+          clearInterval(state.restTimerInterval);
+          state.restTimerInterval = null;
+        }
+        state.restTimerActive = false;
         render();
       }
     }
