@@ -998,32 +998,47 @@
     }
 
     function playBeep() {
-      // Louder, more noticeable 3-beep rest timer alert
+      // Aggressive rest timer alert: layered oscillators for higher perceived loudness.
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
       const beep = (delay) => {
         setTimeout(() => {
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
+          const masterGain = audioContext.createGain();
+          const compressor = audioContext.createDynamicsCompressor();
 
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
+          compressor.threshold.value = -18;
+          compressor.knee.value = 6;
+          compressor.ratio.value = 12;
+          compressor.attack.value = 0.003;
+          compressor.release.value = 0.15;
 
-          oscillator.frequency.value = 1000;
-          oscillator.type = 'square';
+          masterGain.connect(compressor);
+          compressor.connect(audioContext.destination);
 
           const now = audioContext.currentTime;
-          gainNode.gain.setValueAtTime(0.9, now);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+          masterGain.gain.setValueAtTime(1.0, now);
+          masterGain.gain.setValueAtTime(1.0, now + 0.45);
+          masterGain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
 
-          oscillator.start(now);
-          oscillator.stop(now + 0.35);
+          [900, 1350, 1800].forEach((frequency, index) => {
+            const oscillator = audioContext.createOscillator();
+            const voiceGain = audioContext.createGain();
+
+            oscillator.type = index === 0 ? 'square' : 'sawtooth';
+            oscillator.frequency.value = frequency;
+            voiceGain.gain.value = 0.75;
+
+            oscillator.connect(voiceGain);
+            voiceGain.connect(masterGain);
+            oscillator.start(now);
+            oscillator.stop(now + 0.55);
+          });
         }, delay);
       };
 
       beep(0);
-      beep(450);
-      beep(900);
+      beep(650);
+      beep(1300);
     }
 
     function changeRestTimer() {
